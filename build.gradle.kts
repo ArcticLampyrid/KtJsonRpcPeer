@@ -1,8 +1,7 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.3.72"
-    maven
     `java-library`
+    `maven-publish`
 }
 repositories {
     mavenLocal()
@@ -18,22 +17,22 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit"))
 }
-tasks {
-    getByName<Upload>("uploadArchivesToLocal") {
-        repositories {
-            withConvention(MavenRepositoryHandlerConvention::class) {
-                mavenDeployer {
-                    withGroovyBuilder {
-                        "repository"("url" to repositories.mavenLocal().url)
-                    }
-                    pom.project {
-                        withGroovyBuilder {
-                            "groupId"("ktjsonrpcpeer")
-                            "artifactId"("ktjsonrpcpeer")
-                            "version"("1.0")
-                        }
-                    }
-                }
+configure<PublishingExtension> {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "ktjsonrpcpeer"
+            artifactId = "ktjsonrpcpeer"
+            version = "0.1"
+            from(components["java"])
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/1354092549/ktjsonrpcpeer")
+            credentials {
+                username = System.getenv("gpr.usr")
+                password = System.getenv("gpr.key")
             }
         }
     }
