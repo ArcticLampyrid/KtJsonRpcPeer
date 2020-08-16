@@ -13,7 +13,7 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> Any>()
     val completion: Deferred<Unit>
 
-    init{
+    init {
         completion = GlobalScope.async(Dispatchers.IO) {
             while (true) {
                 val msg: ByteArray
@@ -85,7 +85,7 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
             }
             try {
                 val result = processor(request.params)
-                val jsonResult = when(result) {
+                val jsonResult = when (result) {
                     is Unit -> JsonNull.INSTANCE
                     else -> gson.toJsonTree(result)
                 }
@@ -127,24 +127,30 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
 
     suspend fun <T> call(method: String, params: Any, clazz: Class<T>): T {
         val result = call(method, gson.toJsonTree(params))
-        if(clazz == Unit::class.java)
-        {
+        if (clazz == Unit::class.java) {
             return Unit as T
         }
         return gson.fromJson(result, clazz)
     }
 
     private suspend fun call(method: String, params: JsonElement): JsonElement {
-        if(completion.isCompleted){
+        if (completion.isCompleted) {
             throw RpcNotServingException()
         }
         val id = seq.getAndIncrement()
         val channel = Channel<RpcResponse>(1)
         pending[id] = channel
-        adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcRequest("2.0", JsonPrimitive(id), method, params))))
         val response: RpcResponse
-        withTimeout(5000) {
-            response = channel.receive()
+        try {
+            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcRequest("2.0", JsonPrimitive(id), method, params))))
+            withTimeout(5000) {
+                response = channel.receive()
+            }
+        } catch (e: TimeoutCancellationException) {
+            pending.remove(id)
+            throw e
+        } finally {
+            channel.close()
         }
         if (response.error != null) {
             throw RpcTargetException(response.error)
@@ -160,7 +166,7 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
     }
 
     suspend fun notify(method: String, params: JsonElement) {
-        if(completion.isCompleted){
+        if (completion.isCompleted) {
             throw RpcNotServingException()
         }
         adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcRequest("2.0", null, method, params))))
