@@ -10,19 +10,16 @@ import java.io.OutputStreamWriter
 
 
 object RpcJsonCodec:RpcCodec {
-    @JvmStatic
-    private val gson = Gson()
-
     override fun encodeMessage(msg: JsonElement): ByteArray {
         val byteArrayOutputStream  = ByteArrayOutputStream()
         val writer = OutputStreamWriter(byteArrayOutputStream, "UTF-8")
-        gson.toJson(msg, writer)
+        RpcChannel.gson.toJson(msg, writer)
         writer.flush()
         return byteArrayOutputStream.toByteArray()
     }
 
     override fun decodeMessage(msg: ByteArray): JsonElement {
         val reader = InputStreamReader(ByteArrayInputStream(msg), "UTF-8")
-        return gson.fromJson(reader, JsonElement::class.java)
+        return RpcChannel.gson.fromJson(reader, JsonElement::class.java)
     }
 }

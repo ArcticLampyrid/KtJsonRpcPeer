@@ -22,7 +22,7 @@ configure<PublishingExtension> {
         create<MavenPublication>("maven") {
             groupId = "ktjsonrpcpeer"
             artifactId = "ktjsonrpcpeer"
-            version = "0.1"
+            version = "0.2"
             from(components["java"])
         }
     }

@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcCodec = RpcJsonCodec) {
-    private val pending = ConcurrentHashMap<Long, SendChannel<RpcResponse>>()
+    private val pending = ConcurrentHashMap<Long, SendChannel<JsonObject>>()
     private val seq = AtomicLong()
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> Any>()
     val completion: Deferred<Unit>
@@ -22,7 +22,7 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
                 } catch (e: Exception) {
                     break
                 }
-                GlobalScope.async(Dispatchers.IO) {
+                GlobalScope.launch(Dispatchers.IO) {
                     feedData(msg)
                 }
             }
@@ -34,7 +34,7 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
         try {
             root = gson.fromJson(codec.decodeMessage(msg), JsonElement::class.java)
         } catch (e: Exception) {
-            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcResponse(JsonNull.INSTANCE, RpcError.ParseError))))
+            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcErrorResponse(JsonNull.INSTANCE, RpcError.ParseError))))
             return
         }
         val responses = ArrayList<RpcResponse>()
@@ -63,7 +63,7 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
 
     private suspend fun handleMsg(msg: JsonElement): RpcResponse? {
         if (!msg.isJsonObject) {
-            return RpcResponse(JsonNull.INSTANCE, RpcError.InvalidRequest)
+            return RpcErrorResponse(JsonNull.INSTANCE, RpcError.InvalidRequest)
         }
         return handleMsg(msg.asJsonObject)
     }
@@ -74,14 +74,14 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
             try {
                 request = gson.fromJson(msg, RpcRequest::class.java)
             } catch (e: Exception) {
-                return RpcResponse(JsonNull.INSTANCE, RpcError.InvalidRequest)
+                return RpcErrorResponse(JsonNull.INSTANCE, RpcError.InvalidRequest)
             }
             val processor = registeredMethod.get(request.method)
             if (processor == null) {
-                if (request.id == null) {
+                if (!msg.has("id")) {
                     return null
                 }
-                return RpcResponse(request.id, RpcError.MothedNotFound)
+                return RpcErrorResponse(msg["id"], RpcError.MothedNotFound)
             }
             try {
                 val result = processor(request.params)
@@ -89,27 +89,26 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
                     is Unit -> JsonNull.INSTANCE
                     else -> gson.toJsonTree(result)
                 }
-                if (request.id == null) {
+                if (!msg.has("id")) {
                     return null
                 }
-                return RpcResponse(request.id, jsonResult)
+                return RpcResultResponse(msg["id"], jsonResult)
             } catch (e: RpcTargetException) {
-                if (request.id == null) {
+                if (!msg.has("id")) {
                     return null
                 }
-                return RpcResponse(request.id, e.info)
+                return RpcErrorResponse(msg["id"], e.info)
             } catch (e: Exception) {
-                if (request.id == null) {
+                if (!msg.has("id")) {
                     return null
                 }
-                return RpcResponse(request.id, RpcError(-32000, e.message ?: "Unknown error"))
+                return RpcErrorResponse(msg["id"], RpcError(-32000, e.message ?: "Unknown error"))
             }
         } else {
             try {
-                val response = gson.fromJson(msg, RpcResponse::class.java)
-                val id = response.id.asLong
+                val id = msg["id"].asLong
                 val channel = pending.remove(id)
-                channel?.send(response)
+                channel?.send(msg)
             } catch (e: Exception) {
 
             }
@@ -138,11 +137,11 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
             throw RpcNotServingException()
         }
         val id = seq.getAndIncrement()
-        val channel = Channel<RpcResponse>(1)
+        val channel = Channel<JsonObject>(1)
         pending[id] = channel
-        val response: RpcResponse
+        val response: JsonObject
         try {
-            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcRequest("2.0", JsonPrimitive(id), method, params))))
+            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcCallRequest("2.0", method, params, JsonPrimitive(id)))))
             withTimeout(5000) {
                 response = channel.receive()
             }
@@ -152,13 +151,14 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
         } finally {
             channel.close()
         }
-        if (response.error != null) {
-            throw RpcTargetException(response.error)
+        if (response.has("error") && !response["error"].isJsonNull) {
+            val error = gson.fromJson(response["error"], RpcError::class.java)
+            throw RpcTargetException(error)
         }
-        if (response.result == null) {
+        if (!response.has("result")){
             throw RpcTargetException(RpcError.InternalError)
         }
-        return response.result
+        return response["result"]
     }
 
     suspend fun notify(method: String, params: Any) {
@@ -169,13 +169,11 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
         if (completion.isCompleted) {
             throw RpcNotServingException()
         }
-        adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcRequest("2.0", null, method, params))))
+        adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcRequest("2.0", method, params))))
     }
 
     companion object {
-        @JvmStatic
-        private val gson = Gson()
-
+        internal val gson = GsonBuilder().serializeNulls().create()
         @JvmStatic
         inline fun <reified T> readParam(params: JsonElement, index: Int, name: String): T? {
             return readParam<T>(params, index, name, T::class.java)
