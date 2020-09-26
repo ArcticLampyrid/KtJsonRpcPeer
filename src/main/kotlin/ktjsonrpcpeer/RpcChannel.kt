@@ -1,16 +1,17 @@
 package ktjsonrpcpeer
 
-import com.google.gson.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcCodec = RpcJsonCodec) {
-    private val pending = ConcurrentHashMap<Long, SendChannel<JsonObject>>()
+    private val pending = ConcurrentHashMap<Long, SendChannel<RpcResponse>>()
     private val seq = AtomicLong()
-    private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> Any>()
+    private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
     val completion: Deferred<Unit>
 
     init {
@@ -32,116 +33,88 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
     private suspend fun feedData(msg: ByteArray) {
         val root: JsonElement
         try {
-            root = gson.fromJson(codec.decodeMessage(msg), JsonElement::class.java)
+            root = codec.decodeMessage(msg)
         } catch (e: Exception) {
-            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcErrorResponse(JsonNull.INSTANCE, RpcError.ParseError))))
+            adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcErrorResponse(JsonNull, RpcError.ParseError))))
             return
         }
-        val responses = ArrayList<RpcResponse>()
-        if (root.isJsonArray) {
-            for (x in root.asJsonArray) {
-                val r = handleMsg(x)
-                if (r != null) {
-                    responses.add(r)
-                }
+        if (root is JsonArray) {
+            val responses = ArrayList<RpcResponse>()
+            for (x in root) {
+                responses.add(handleMsg(x) ?: continue)
+            }
+            if (responses.size != 0) {
+                adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(ListSerializer(RpcMessageSerializer), responses)))
             }
         } else {
             val r = handleMsg(root)
             if (r != null) {
-                responses.add(r)
+                adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcMessageSerializer, r)))
             }
-        }
-        if (responses.size == 0) {
-            return
-        }
-        if (root.isJsonArray) {
-            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(responses)))
-        } else {
-            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(responses[0])))
         }
     }
 
     private suspend fun handleMsg(msg: JsonElement): RpcResponse? {
-        if (!msg.isJsonObject) {
-            return RpcErrorResponse(JsonNull.INSTANCE, RpcError.InvalidRequest)
+        if (msg !is JsonObject) {
+            return RpcErrorResponse(JsonNull, RpcError.InvalidRequest)
         }
-        return handleMsg(msg.asJsonObject)
+        return handleMsg(Json.decodeFromJsonElement(RpcMessageSerializer, msg))
     }
 
-    private suspend fun handleMsg(msg: JsonObject): RpcResponse? {
-        if (msg.has("method")) {
-            val request: RpcRequest
-            try {
-                request = gson.fromJson(msg, RpcRequest::class.java)
-            } catch (e: Exception) {
-                return RpcErrorResponse(JsonNull.INSTANCE, RpcError.InvalidRequest)
+    private suspend fun handleMsg(msg: RpcMessage): RpcResponse? {
+        when (msg) {
+            is RpcNotifyRequest -> {
+                val processor = registeredMethod[msg.method] ?: return null
+                processor(msg.params)
+                return null
             }
-            val processor = registeredMethod.get(request.method)
-            if (processor == null) {
-                if (!msg.has("id")) {
-                    return null
+            is RpcCallRequest -> {
+                val processor = registeredMethod[msg.method]
+                        ?: return RpcErrorResponse(msg.id, RpcError.MethodNotFound)
+                return try {
+                    RpcResultResponse(msg.id, processor(msg.params))
+                } catch (e: RpcTargetException) {
+                    RpcErrorResponse(msg.id, e.info)
+                } catch (e: Exception) {
+                    RpcErrorResponse(msg.id, RpcError(-32000, e.message ?: "Unknown error"))
                 }
-                return RpcErrorResponse(msg["id"], RpcError.MothedNotFound)
             }
-            try {
-                val result = processor(request.params)
-                val jsonResult = when (result) {
-                    is Unit -> JsonNull.INSTANCE
-                    else -> gson.toJsonTree(result)
-                }
-                if (!msg.has("id")) {
-                    return null
-                }
-                return RpcResultResponse(msg["id"], jsonResult)
-            } catch (e: RpcTargetException) {
-                if (!msg.has("id")) {
-                    return null
-                }
-                return RpcErrorResponse(msg["id"], e.info)
-            } catch (e: Exception) {
-                if (!msg.has("id")) {
-                    return null
-                }
-                return RpcErrorResponse(msg["id"], RpcError(-32000, e.message ?: "Unknown error"))
-            }
-        } else {
-            try {
-                val id = msg["id"].asLong
+            is RpcResponse -> {
+                val id = msg.id.jsonPrimitive.long
                 val channel = pending.remove(id)
                 channel?.send(msg)
-            } catch (e: Exception) {
-
+                return null
             }
-            return null
+            else -> {
+                return null
+            }
         }
     }
 
-    fun register(method: String, funObject: suspend (params: JsonElement) -> Any) {
-        registeredMethod[method] = funObject
-    }
-
-    suspend inline fun <reified T> call(method: String, params: Any): T {
-        return call(method, params, T::class.java)
-    }
-
-    suspend fun <T> call(method: String, params: Any, clazz: Class<T>): T {
-        val result = call(method, gson.toJsonTree(params))
-        if (clazz == Unit::class.java) {
-            return Unit as T
+    inline fun <reified TResult, reified TArgs> register(method: String, noinline processor: suspend (params: TArgs) -> TResult) {
+        registerLowLevel(method) {
+            Json.encodeToJsonElement(processor(Json.decodeFromJsonElement(it)))
         }
-        return gson.fromJson(result, clazz)
     }
 
-    private suspend fun call(method: String, params: JsonElement): JsonElement {
+    fun registerLowLevel(method: String, processor: suspend (params: JsonElement) -> JsonElement) {
+        registeredMethod[method] = processor
+    }
+
+    suspend inline fun <reified TResult, reified TArgs> call(method: String, params: TArgs): TResult {
+        return Json.decodeFromJsonElement(callLowLevel(method, Json.encodeToJsonElement(params)))
+    }
+
+    suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
         if (completion.isCompleted) {
             throw RpcNotServingException()
         }
         val id = seq.getAndIncrement()
-        val channel = Channel<JsonObject>(1)
+        val channel = Channel<RpcResponse>(1)
         pending[id] = channel
-        val response: JsonObject
+        val response: RpcResponse
         try {
-            adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcCallRequest("2.0", method, params, JsonPrimitive(id)))))
+            adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcCallRequest("2.0", method, params, JsonPrimitive(id)))))
             withTimeout(5000) {
                 response = channel.receive()
             }
@@ -151,48 +124,42 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
         } finally {
             channel.close()
         }
-        if (response.has("error") && !response["error"].isJsonNull) {
-            val error = gson.fromJson(response["error"], RpcError::class.java)
-            throw RpcTargetException(error)
+        return when (response) {
+            is RpcErrorResponse -> throw RpcTargetException(response.error)
+            is RpcResultResponse -> response.result
+            else -> throw RpcTargetException(RpcError.InternalError)
         }
-        if (!response.has("result")){
-            throw RpcTargetException(RpcError.InternalError)
-        }
-        return response["result"]
     }
 
-    suspend fun notify(method: String, params: Any) {
-        notify(method, gson.toJsonTree(params))
+    suspend inline fun <reified TArgs> notify(method: String, params: TArgs) {
+        notifyLowLevel(method, Json.encodeToJsonElement(params))
     }
 
-    suspend fun notify(method: String, params: JsonElement) {
+    suspend fun notifyLowLevel(method: String, params: JsonElement) {
         if (completion.isCompleted) {
             throw RpcNotServingException()
         }
-        adapter.writeMessage(codec.encodeMessage(gson.toJsonTree(RpcRequest("2.0", method, params))))
+        adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcNotifyRequest("2.0", method, params))))
     }
 
     companion object {
-        internal val gson = GsonBuilder().serializeNulls().create()
         @JvmStatic
         inline fun <reified T> readParam(params: JsonElement, index: Int, name: String): T? {
-            return readParam<T>(params, index, name, T::class.java)
-        }
-
-        @JvmStatic
-        fun <T> readParam(params: JsonElement, index: Int, name: String, clazz: Class<T>): T? {
             val x = when {
-                params.isJsonArray && index < params.asJsonArray.size() -> {
-                    params.asJsonArray[index]
+                params is JsonArray && index < params.count() -> {
+                    params[index]
                 }
-                params.isJsonObject && params.asJsonObject.has(name) -> {
-                    params.asJsonObject[name]
+                params is JsonObject && params.containsKey(name) -> {
+                    params[name]
                 }
                 else -> {
-                    return null
+                    null
                 }
             }
-            return gson.fromJson(x, clazz)
+            if (x == null) {
+                return x
+            }
+            return Json.decodeFromJsonElement<T>(x)
         }
     }
 }

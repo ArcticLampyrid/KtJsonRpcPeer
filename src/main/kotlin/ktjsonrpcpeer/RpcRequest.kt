@@ -1,11 +1,8 @@
 package ktjsonrpcpeer
 
-import com.google.gson.JsonElement
-import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.json.JsonElement
 
-internal open class RpcRequest(
-        @SerializedName("json-rpc")
-        val version: String?,
-        val method: String,
-        val params: JsonElement
-)
+internal abstract class RpcRequest : RpcMessage() {
+    abstract val method: String
+    abstract val params: JsonElement
+}

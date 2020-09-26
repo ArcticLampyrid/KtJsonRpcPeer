@@ -1,11 +1,13 @@
 package ktjsonrpcpeer
 
-import com.google.gson.JsonElement
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
+@Serializable
 internal class RpcErrorResponse(
-        version: String?,
-        id: JsonElement?,
+        override val version: String?,
+        override val id: JsonElement,
         val error: RpcError
-) : RpcResponse(version, id) {
-    constructor(id: JsonElement?, error: RpcError) : this("2.0", id, error)
+) : RpcResponse() {
+    constructor(id: JsonElement, error: RpcError) : this("2.0", id, error)
 }

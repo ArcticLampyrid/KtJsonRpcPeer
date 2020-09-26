@@ -1,25 +1,17 @@
 package ktjsonrpcpeer
 
-import com.google.gson.Gson
-import com.google.gson.JsonElement
-import com.google.gson.stream.JsonReader
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 
 
 object RpcJsonCodec:RpcCodec {
     override fun encodeMessage(msg: JsonElement): ByteArray {
-        val byteArrayOutputStream  = ByteArrayOutputStream()
-        val writer = OutputStreamWriter(byteArrayOutputStream, "UTF-8")
-        RpcChannel.gson.toJson(msg, writer)
-        writer.flush()
-        return byteArrayOutputStream.toByteArray()
+        return Json.encodeToString(msg).toByteArray()
     }
 
     override fun decodeMessage(msg: ByteArray): JsonElement {
-        val reader = InputStreamReader(ByteArrayInputStream(msg), "UTF-8")
-        return RpcChannel.gson.fromJson(reader, JsonElement::class.java)
+        return Json.decodeFromString(msg.decodeToString())
     }
 }

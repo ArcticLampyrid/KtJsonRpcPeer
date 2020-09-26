@@ -1,5 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.10"
+    kotlin("plugin.serialization") version "1.4.10"
     `java-library`
     `maven-publish`
 }
@@ -11,7 +12,7 @@ repositories {
 dependencies {
     implementation(platform(kotlin("bom")))
     implementation(kotlin("stdlib-jdk8"))
-    api("com.google.code.gson:gson:2.8.6")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0-RC2")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     api("com.squareup.okhttp3:okhttp:4.8.1")
     testImplementation(kotlin("test"))

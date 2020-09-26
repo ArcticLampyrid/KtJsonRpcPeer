@@ -1,6 +1,6 @@
 package ktjsonrpcpeer
 
-import com.google.gson.JsonElement
+import kotlinx.serialization.json.JsonElement
 
 interface RpcCodec {
     fun encodeMessage(msg: JsonElement): ByteArray

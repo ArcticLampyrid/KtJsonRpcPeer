@@ -1,7 +1,9 @@
 package ktjsonrpcpeer
 
-import com.google.gson.JsonElement
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
+@Serializable
 data class RpcError(
         val code: Int,
         val message: String,
@@ -12,7 +14,7 @@ data class RpcError(
         val InvalidRequest = RpcError(-32600, "Invalid Request")
 
         @JvmStatic
-        val MothedNotFound = RpcError(-32601, "Method not found")
+        val MethodNotFound = RpcError(-32601, "Method not found")
 
         @JvmStatic
         val InvalidParams = RpcError(-32602, "Invalid params")
