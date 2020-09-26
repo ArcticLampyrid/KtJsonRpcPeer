@@ -93,7 +93,17 @@ public class RpcChannel(private val adapter: RpcMessageAdapter, private val code
 
     public inline fun <reified TResult, reified TArgs> register(method: String, noinline processor: suspend (params: TArgs) -> TResult) {
         registerLowLevel(method) {
-            Json.encodeToJsonElement(processor(Json.decodeFromJsonElement(it)))
+            val p = if (TArgs::class == Unit::class) {
+                Unit as TArgs
+            } else {
+                Json.decodeFromJsonElement<TArgs>(it)
+            }
+            val r = processor(p)
+            if (TResult::class == Unit::class) {
+                JsonNull
+            } else {
+                Json.encodeToJsonElement(r)
+            }
         }
     }
 
@@ -102,7 +112,11 @@ public class RpcChannel(private val adapter: RpcMessageAdapter, private val code
     }
 
     public suspend inline fun <reified TResult, reified TArgs> call(method: String, params: TArgs): TResult {
-        return Json.decodeFromJsonElement(callLowLevel(method, Json.encodeToJsonElement(params)))
+        val r = callLowLevel(method, Json.encodeToJsonElement(params))
+        if (TResult::class == Unit::class) {
+            return Unit as TResult
+        }
+        return Json.decodeFromJsonElement(r)
     }
 
     public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
