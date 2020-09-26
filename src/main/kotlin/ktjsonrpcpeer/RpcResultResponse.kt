@@ -6,7 +6,7 @@ import kotlinx.serialization.json.JsonElement
 
 @Serializable
 internal class RpcResultResponse(
-        @SerialName("json-rpc")
+        @SerialName("jsonrpc")
         override val version: String?,
         override val id: JsonElement,
         val result: JsonElement
