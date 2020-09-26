@@ -1,10 +1,12 @@
 package ktjsonrpcpeer
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
 internal class RpcResultResponse(
+        @SerialName("json-rpc")
         override val version: String?,
         override val id: JsonElement,
         val result: JsonElement
