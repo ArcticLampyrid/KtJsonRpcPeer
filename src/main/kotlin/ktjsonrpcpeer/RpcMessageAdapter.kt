@@ -1,6 +1,6 @@
 package ktjsonrpcpeer
 
-interface RpcMessageAdapter {
-    suspend fun readMessage(): ByteArray
-    suspend fun writeMessage(msg: ByteArray)
+public interface RpcMessageAdapter {
+    public suspend fun readMessage(): ByteArray
+    public suspend fun writeMessage(msg: ByteArray)
 }

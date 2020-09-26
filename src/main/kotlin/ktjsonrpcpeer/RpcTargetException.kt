@@ -1,3 +1,3 @@
 package ktjsonrpcpeer
 
-class RpcTargetException(val info: RpcError) : Exception(info.message)
+public class RpcTargetException(public val info: RpcError) : Exception(info.message)

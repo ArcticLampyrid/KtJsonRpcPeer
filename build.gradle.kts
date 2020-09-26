@@ -4,6 +4,9 @@ plugins {
     `java-library`
     `maven-publish`
 }
+kotlin {
+    explicitApi()
+}
 repositories {
     mavenLocal()
     mavenCentral()

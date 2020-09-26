@@ -8,11 +8,11 @@ import kotlinx.serialization.json.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
-class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcCodec = RpcJsonCodec) {
+public class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcCodec = RpcJsonCodec) {
     private val pending = ConcurrentHashMap<Long, SendChannel<RpcResponse>>()
     private val seq = AtomicLong()
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
-    val completion: Deferred<Unit>
+    public val completion: Deferred<Unit>
 
     init {
         completion = GlobalScope.async(Dispatchers.IO) {
@@ -91,21 +91,21 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
         }
     }
 
-    inline fun <reified TResult, reified TArgs> register(method: String, noinline processor: suspend (params: TArgs) -> TResult) {
+    public inline fun <reified TResult, reified TArgs> register(method: String, noinline processor: suspend (params: TArgs) -> TResult) {
         registerLowLevel(method) {
             Json.encodeToJsonElement(processor(Json.decodeFromJsonElement(it)))
         }
     }
 
-    fun registerLowLevel(method: String, processor: suspend (params: JsonElement) -> JsonElement) {
+    public fun registerLowLevel(method: String, processor: suspend (params: JsonElement) -> JsonElement) {
         registeredMethod[method] = processor
     }
 
-    suspend inline fun <reified TResult, reified TArgs> call(method: String, params: TArgs): TResult {
+    public suspend inline fun <reified TResult, reified TArgs> call(method: String, params: TArgs): TResult {
         return Json.decodeFromJsonElement(callLowLevel(method, Json.encodeToJsonElement(params)))
     }
 
-    suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
+    public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
         if (completion.isCompleted) {
             throw RpcNotServingException()
         }
@@ -131,20 +131,20 @@ class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcC
         }
     }
 
-    suspend inline fun <reified TArgs> notify(method: String, params: TArgs) {
+    public suspend inline fun <reified TArgs> notify(method: String, params: TArgs) {
         notifyLowLevel(method, Json.encodeToJsonElement(params))
     }
 
-    suspend fun notifyLowLevel(method: String, params: JsonElement) {
+    public suspend fun notifyLowLevel(method: String, params: JsonElement) {
         if (completion.isCompleted) {
             throw RpcNotServingException()
         }
         adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcNotifyRequest("2.0", method, params))))
     }
 
-    companion object {
+    public companion object {
         @JvmStatic
-        inline fun <reified T> readParam(params: JsonElement, index: Int, name: String): T? {
+        public inline fun <reified T> readParam(params: JsonElement, index: Int, name: String): T? {
             val x = when {
                 params is JsonArray && index < params.count() -> {
                     params[index]

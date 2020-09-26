@@ -1,23 +1,21 @@
 package ktjsonrpcpeer
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.receiveOrNull
+import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.launch
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
-import java.nio.charset.Charset
 
-class RpcOkWebsocketOnceAdapter private constructor(private val incoming : Channel<ByteArray>,
-                                                    private val outcoming : Channel<ByteArray>)
+public class RpcOkWebsocketOnceAdapter private constructor(private val incoming: Channel<ByteArray>,
+                                                           private val outcoming: Channel<ByteArray>)
     : RpcMessageAdapter by RpcChannelAdapter(incoming, outcoming), WebSocketListener() {
 
-    constructor():this(Channel<ByteArray>(), Channel<ByteArray>()){
-
-    }
+    public constructor() : this(Channel<ByteArray>(), Channel<ByteArray>())
 
     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
         incoming.close()
