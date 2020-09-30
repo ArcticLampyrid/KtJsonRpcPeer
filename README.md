@@ -4,7 +4,9 @@ It's full-duplex, supporting two-way procedure call.
 It can be work well with WebSocket.
 
 ## Release
-This library uses GitHub Packages to release versions.  
+This library uses GitHub Packages and Bintray to release versions.  
+[ ![Download](https://api.bintray.com/packages/qiqiworld/ktjsonrpcpeer/ktjsonrpcpeer/images/download.svg) ](https://bintray.com/qiqiworld/ktjsonrpcpeer/ktjsonrpcpeer/_latestVersion)  
+
 
 ## License
 This library is licensed under BSD 3-Clause License.  
