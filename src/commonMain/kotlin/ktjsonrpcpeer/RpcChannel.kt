@@ -13,7 +13,7 @@ import kotlin.jvm.JvmStatic
 public class RpcChannel(
     private val adapter: RpcMessageAdapter,
     private val codec: RpcCodec = RpcJsonCodec,
-    context: CoroutineContext = Dispatchers.Main
+    context: CoroutineContext = Dispatchers.Default
 ) {
     private val pending = IsoMutableMap<Long, SendChannel<RpcResponse>>()
     private val seq = AtomicLong(0)
