@@ -1,38 +1,51 @@
 plugins {
-    kotlin("jvm") version "1.4.10"
+    kotlin("multiplatform") version "1.4.10"
     kotlin("plugin.serialization") version "1.4.10"
-    `java-library`
     `maven-publish`
 }
+group = "ktjsonrpcpeer"
+version = "0.4.0"
 kotlin {
     explicitApi()
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "1.8"
+        }
+    }
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0-RC2")
+                implementation("co.touchlab:stately-concurrency:1.1.1")
+                implementation("co.touchlab:stately-isolate:1.1.1-a1")
+                implementation("co.touchlab:stately-iso-collections:1.1.1-a1")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                api("com.squareup.okhttp3:okhttp:4.8.1")
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit"))
+            }
+        }
+    }
 }
 repositories {
     mavenLocal()
     mavenCentral()
     jcenter()
 }
-dependencies {
-    implementation(platform(kotlin("bom")))
-    implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0-RC2")
-    implementation("co.touchlab:stately-concurrency:1.1.1")
-    implementation("co.touchlab:stately-isolate:1.1.1-a1")
-    implementation("co.touchlab:stately-iso-collections:1.1.1-a1")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
-    api("com.squareup.okhttp3:okhttp:4.8.1")
-    testImplementation(kotlin("test"))
-    testImplementation(kotlin("test-junit"))
-}
 configure<PublishingExtension> {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = "ktjsonrpcpeer"
-            artifactId = "ktjsonrpcpeer"
-            version = "0.3.3"
-            from(components["java"])
-        }
-    }
     repositories {
         maven {
             name = "GitHubPackages"

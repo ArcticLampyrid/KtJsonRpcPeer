@@ -8,7 +8,7 @@ import kotlinx.serialization.json.JsonElement
 
 public object RpcJsonCodec : RpcCodec {
     override fun encodeMessage(msg: JsonElement): ByteArray {
-        return Json.encodeToString(msg).toByteArray()
+        return Json.encodeToString(msg).encodeToByteArray()
     }
 
     override fun decodeMessage(msg: ByteArray): JsonElement {

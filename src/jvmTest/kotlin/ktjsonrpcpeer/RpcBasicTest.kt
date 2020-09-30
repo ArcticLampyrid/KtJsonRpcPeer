@@ -23,6 +23,7 @@ class RpcBasicTest {
             assertEquals("hello123", result)
         }
     }
+
     @Test
     fun anyCanBeCastToUnit() {
         runBlocking {
@@ -40,6 +41,7 @@ class RpcBasicTest {
             })
         }
     }
+
     @Test
     fun unitSerializedToNull() {
         runBlocking {

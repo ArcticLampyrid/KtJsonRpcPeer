@@ -1,21 +1,27 @@
 package ktjsonrpcpeer
 
-import co.touchlab.stately.concurrency.AtomicLong
 import co.touchlab.stately.collections.IsoMutableMap
+import co.touchlab.stately.concurrency.AtomicLong
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
+import kotlin.coroutines.CoroutineContext
+import kotlin.jvm.JvmStatic
 
-public class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcCodec = RpcJsonCodec) {
+public class RpcChannel(
+    private val adapter: RpcMessageAdapter,
+    private val codec: RpcCodec = RpcJsonCodec,
+    context: CoroutineContext = Dispatchers.Main
+) {
     private val pending = IsoMutableMap<Long, SendChannel<RpcResponse>>()
-    private val seq = AtomicLong()
+    private val seq = AtomicLong(0)
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
     public val completion: Deferred<Unit>
 
     init {
-        completion = GlobalScope.async(Dispatchers.IO) {
+        completion = GlobalScope.async(context) {
             while (true) {
                 val msg: ByteArray
                 try {
@@ -23,7 +29,7 @@ public class RpcChannel(private val adapter: RpcMessageAdapter, private val code
                 } catch (e: Exception) {
                     break
                 }
-                GlobalScope.launch(Dispatchers.IO) {
+                launch {
                     feedData(msg)
                 }
             }
@@ -35,7 +41,16 @@ public class RpcChannel(private val adapter: RpcMessageAdapter, private val code
         try {
             root = codec.decodeMessage(msg)
         } catch (e: Exception) {
-            adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcErrorResponse(JsonNull, RpcError.ParseError))))
+            adapter.writeMessage(
+                codec.encodeMessage(
+                    Json.encodeToJsonElement(
+                        RpcErrorResponse(
+                            JsonNull,
+                            RpcError.ParseError
+                        )
+                    )
+                )
+            )
             return
         }
         if (root is JsonArray) {
@@ -44,7 +59,14 @@ public class RpcChannel(private val adapter: RpcMessageAdapter, private val code
                 responses.add(handleMsg(x) ?: continue)
             }
             if (responses.size != 0) {
-                adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(ListSerializer(RpcMessageSerializer), responses)))
+                adapter.writeMessage(
+                    codec.encodeMessage(
+                        Json.encodeToJsonElement(
+                            ListSerializer(RpcMessageSerializer),
+                            responses
+                        )
+                    )
+                )
             }
         } else {
             val r = handleMsg(root)
@@ -70,7 +92,7 @@ public class RpcChannel(private val adapter: RpcMessageAdapter, private val code
             }
             is RpcCallRequest -> {
                 val processor = registeredMethod[msg.method]
-                        ?: return RpcErrorResponse(msg.id, RpcError.MethodNotFound)
+                    ?: return RpcErrorResponse(msg.id, RpcError.MethodNotFound)
                 return try {
                     RpcResultResponse(msg.id, processor(msg.params))
                 } catch (e: RpcTargetException) {
@@ -91,7 +113,10 @@ public class RpcChannel(private val adapter: RpcMessageAdapter, private val code
         }
     }
 
-    public inline fun <reified TResult, reified TArgs> register(method: String, noinline processor: suspend (params: TArgs) -> TResult) {
+    public inline fun <reified TResult, reified TArgs> register(
+        method: String,
+        noinline processor: suspend (params: TArgs) -> TResult
+    ) {
         registerLowLevel(method) {
             val p = if (TArgs::class == Unit::class) {
                 Unit as TArgs
@@ -123,12 +148,23 @@ public class RpcChannel(private val adapter: RpcMessageAdapter, private val code
         if (completion.isCompleted) {
             throw RpcNotServingException()
         }
-        val id = seq.getAndIncrement()
+        val id = seq.incrementAndGet()
         val channel = Channel<RpcResponse>(1)
         pending[id] = channel
         val response: RpcResponse
         try {
-            adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcCallRequest("2.0", method, params, JsonPrimitive(id)))))
+            adapter.writeMessage(
+                codec.encodeMessage(
+                    Json.encodeToJsonElement(
+                        RpcCallRequest(
+                            "2.0",
+                            method,
+                            params,
+                            JsonPrimitive(id)
+                        )
+                    )
+                )
+            )
             withTimeout(5000) {
                 response = channel.receive()
             }

@@ -2,12 +2,13 @@ package ktjsonrpcpeer
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import kotlin.jvm.JvmStatic
 
 @Serializable
 public data class RpcError(
-        val code: Int,
-        val message: String,
-        val data: JsonElement? = null
+    val code: Int,
+    val message: String,
+    val data: JsonElement? = null
 ) {
     public companion object {
         @JvmStatic

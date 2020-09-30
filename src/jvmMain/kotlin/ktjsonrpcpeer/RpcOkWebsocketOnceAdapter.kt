@@ -11,9 +11,10 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
 
-public class RpcOkWebsocketOnceAdapter private constructor(private val incoming: Channel<ByteArray>,
-                                                           private val outcoming: Channel<ByteArray>)
-    : RpcMessageAdapter by RpcChannelAdapter(incoming, outcoming), WebSocketListener() {
+public class RpcOkWebsocketOnceAdapter private constructor(
+    private val incoming: Channel<ByteArray>,
+    private val outcoming: Channel<ByteArray>
+) : RpcMessageAdapter by RpcChannelAdapter(incoming, outcoming), WebSocketListener() {
 
     public constructor() : this(Channel<ByteArray>(), Channel<ByteArray>())
 
