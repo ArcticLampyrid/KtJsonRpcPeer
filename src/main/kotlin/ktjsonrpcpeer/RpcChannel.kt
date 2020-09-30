@@ -1,15 +1,15 @@
 package ktjsonrpcpeer
 
+import co.touchlab.stately.concurrency.AtomicLong
+import co.touchlab.stately.collections.IsoMutableMap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicLong
 
 public class RpcChannel(private val adapter: RpcMessageAdapter, private val codec: RpcCodec = RpcJsonCodec) {
-    private val pending = ConcurrentHashMap<Long, SendChannel<RpcResponse>>()
+    private val pending = IsoMutableMap<Long, SendChannel<RpcResponse>>()
     private val seq = AtomicLong()
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
     public val completion: Deferred<Unit>
