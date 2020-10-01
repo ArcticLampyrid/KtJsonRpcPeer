@@ -18,6 +18,7 @@ public class RpcChannel(
     private val pending = IsoMutableMap<Long, SendChannel<RpcResponse>>()
     private val seq = AtomicLong(0)
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
+    private var completionCause: Throwable? = null
     public val completion: Deferred<Unit>
 
     init {
@@ -26,7 +27,8 @@ public class RpcChannel(
                 val msg: ByteArray
                 try {
                     msg = adapter.readMessage()
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
+                    completionCause = e
                     break
                 }
                 launch {
@@ -146,7 +148,7 @@ public class RpcChannel(
 
     public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
         if (completion.isCompleted) {
-            throw RpcNotServingException()
+            throw RpcNotServingException(completionCause)
         }
         val id = seq.incrementAndGet()
         val channel = Channel<RpcResponse>(1)
@@ -187,7 +189,7 @@ public class RpcChannel(
 
     public suspend fun notifyLowLevel(method: String, params: JsonElement) {
         if (completion.isCompleted) {
-            throw RpcNotServingException()
+            throw RpcNotServingException(completionCause)
         }
         adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcNotifyRequest("2.0", method, params))))
     }

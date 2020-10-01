@@ -1,3 +1,3 @@
 package ktjsonrpcpeer
 
-public class RpcNotServingException : Exception("rpc not serving exception")
+public class RpcNotServingException(cause: Throwable? = null) : Exception("rpc not serving exception", cause)

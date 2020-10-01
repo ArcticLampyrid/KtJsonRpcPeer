@@ -24,8 +24,8 @@ public class RpcOkWebsocketOnceAdapter private constructor(
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-        incoming.close()
-        outcoming.close()
+        incoming.close(t)
+        outcoming.close(t)
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
