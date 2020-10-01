@@ -68,7 +68,7 @@ configure<PublishingExtension> {
                             "description",
                             "ktjsonrpcpeer is a Kotlin library that implements JSON-RPC 2.0 in Peer mode.\n" +
                                     "It's full-duplex, supporting two-way procedure call.\n" +
-                                    "It can be work well with WebSocket."
+                                    "It can work well with WebSocket."
                         )
                         root.appendNode("url", "https://github.com/1354092549/ktjsonrpcpeer")
                     }

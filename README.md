@@ -1,7 +1,7 @@
 ## ktjsonrpcpeer
 **ktjsonrpcpeer** is a Kotlin library that implements [JSON-RPC 2.0](https://www.jsonrpc.org/specification) in Peer mode.  
 It's full-duplex, supporting two-way procedure call.  
-It can be work well with WebSocket.
+It can work well with WebSocket.
 
 ## Release
 This library uses GitHub Packages and Bintray to release versions.  
