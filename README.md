@@ -5,7 +5,7 @@ It can work well with WebSocket.
 
 ## Release
 This library uses GitHub Packages and Bintray to release versions.  
-[ ![Download](https://api.bintray.com/packages/qiqiworld/ktjsonrpcpeer/ktjsonrpcpeer/images/download.svg) ](https://bintray.com/qiqiworld/ktjsonrpcpeer/ktjsonrpcpeer/_latestVersion)  
+[ ![Download](https://api.bintray.com/packages/qiqiworld/ktjsonrpcpeer/twitter.qiqiworld1.ktjsonrpcpeer/images/download.svg) ](https://bintray.com/qiqiworld/ktjsonrpcpeer/twitter.qiqiworld1.ktjsonrpcpeer/_latestVersion)  
 
 
 ## License

@@ -3,8 +3,8 @@ plugins {
     kotlin("plugin.serialization") version "1.4.10"
     `maven-publish`
 }
-group = "ktjsonrpcpeer"
-version = "0.5.0"
+group = "twitter.qiqiworld1.ktjsonrpcpeer"
+version = "0.6.0"
 kotlin {
     explicitApi()
     jvm {
@@ -63,7 +63,7 @@ configure<PublishingExtension> {
                 with(publication.pom) {
                     withXml {
                         val root = asNode()
-                        root.appendNode("name", "ktjsonrpcpeer")
+                        root.appendNode("name", "twitter.qiqiworld1.ktjsonrpcpeer")
                         root.appendNode(
                             "description",
                             "ktjsonrpcpeer is a Kotlin library that implements JSON-RPC 2.0 in Peer mode.\n" +
@@ -101,7 +101,7 @@ configure<PublishingExtension> {
     repositories {
         maven {
             name = "Bintray"
-            url = uri("https://api.bintray.com/maven/qiqiworld/ktjsonrpcpeer/ktjsonrpcpeer/;publish=1;override=1")
+            url = uri("https://api.bintray.com/maven/qiqiworld/ktjsonrpcpeer/twitter.qiqiworld1.ktjsonrpcpeer/;publish=1;override=1")
             credentials {
                 username = System.getenv("BINTRAY_USER")
                 password = System.getenv("BINTRAY_API_KEY")

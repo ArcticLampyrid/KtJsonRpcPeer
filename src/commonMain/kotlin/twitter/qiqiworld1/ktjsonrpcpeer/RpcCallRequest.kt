@@ -1,4 +1,4 @@
-package ktjsonrpcpeer
+package twitter.qiqiworld1.ktjsonrpcpeer
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
