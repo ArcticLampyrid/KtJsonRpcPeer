@@ -143,7 +143,7 @@ public class RpcChannel(
         if (TResult::class == Unit::class) {
             return Unit as TResult
         }
-        return Json.decodeFromJsonElement(r)
+        return jsonIgnoringUnknownKeys.decodeFromJsonElement(r)
     }
 
     public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
@@ -195,6 +195,11 @@ public class RpcChannel(
     }
 
     public companion object {
+        @JvmStatic
+        public val jsonIgnoringUnknownKeys: Json = Json {
+            ignoreUnknownKeys = true
+        }
+
         @JvmStatic
         public inline fun <reified T> readParam(params: JsonElement, index: Int, name: String): T? {
             val x = when {
