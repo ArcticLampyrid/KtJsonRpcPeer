@@ -4,7 +4,7 @@ plugins {
     `maven-publish`
 }
 group = "ktjsonrpcpeer"
-version = "0.4.1"
+version = "0.5.0"
 kotlin {
     explicitApi()
     jvm {
@@ -57,6 +57,47 @@ repositories {
     jcenter()
 }
 configure<PublishingExtension> {
+    publications.forEach { publication ->
+        when (publication) {
+            is MavenPublication -> {
+                with(publication.pom) {
+                    withXml {
+                        val root = asNode()
+                        root.appendNode("name", "ktjsonrpcpeer")
+                        root.appendNode(
+                            "description",
+                            "ktjsonrpcpeer is a Kotlin library that implements JSON-RPC 2.0 in Peer mode.\n" +
+                                    "It's full-duplex, supporting two-way procedure call.\n" +
+                                    "It can be work well with WebSocket."
+                        )
+                        root.appendNode("url", "https://github.com/1354092549/ktjsonrpcpeer")
+                    }
+                    licenses {
+                        license {
+                            name.set("BSD 3-Clause \"New\" or \"Revised\" License\n")
+                            url.set("https://github.com/1354092549/ktjsonrpcpeer/blob/master/LICENSE.md")
+                            distribution.set("repo")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("qiqiworld")
+                            name.set("qiqiworld")
+                            email.set("1354092549@qq.com")
+                        }
+                    }
+                    scm {
+                        url.set("https://github.com/1354092549/ktjsonrpcpeer")
+                        connection.set("scm:git:git://github.com/1354092549/ktjsonrpcpeer")
+                        developerConnection.set("scm:git:git://github.com/1354092549/ktjsonrpcpeer")
+                    }
+                }
+            }
+            else -> {
+
+            }
+        }
+    }
     repositories {
         maven {
             name = "Bintray"
