@@ -4,7 +4,7 @@ plugins {
     `maven-publish`
 }
 group = "twitter.qiqiworld1.ktjsonrpcpeer"
-version = "0.6.0"
+version = "0.6.1"
 kotlin {
     explicitApi()
     jvm {
@@ -23,7 +23,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0-RC2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
                 implementation("co.touchlab:stately-concurrency:1.1.1")
                 implementation("co.touchlab:stately-isolate:1.1.1-a1")
                 implementation("co.touchlab:stately-iso-collections:1.1.1-a1")
