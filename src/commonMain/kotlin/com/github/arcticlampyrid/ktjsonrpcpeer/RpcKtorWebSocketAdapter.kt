@@ -1,4 +1,4 @@
-package twitter.qiqiworld1.ktjsonrpcpeer
+package com.github.arcticlampyrid.ktjsonrpcpeer
 
 import io.ktor.http.cio.websocket.*
 

@@ -1,15 +1,15 @@
-package twitter.qiqiworld1.ktjsonrpcpeer
+package com.github.arcticlampyrid.ktjsonrpcpeer
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
-internal class RpcErrorResponse(
+internal class RpcResultResponse(
     @SerialName("jsonrpc")
     override val version: String?,
     override val id: JsonElement,
-    val error: RpcError
+    val result: JsonElement
 ) : RpcResponse() {
-    constructor(id: JsonElement, error: RpcError) : this("2.0", id, error)
+    constructor(id: JsonElement, result: JsonElement) : this("2.0", id, result)
 }

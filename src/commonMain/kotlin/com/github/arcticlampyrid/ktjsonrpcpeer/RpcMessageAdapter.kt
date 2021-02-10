@@ -1,4 +1,4 @@
-package twitter.qiqiworld1.ktjsonrpcpeer
+package com.github.arcticlampyrid.ktjsonrpcpeer
 
 public interface RpcMessageAdapter {
     public suspend fun readMessage(): ByteArray

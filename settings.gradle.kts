@@ -1,1 +1,1 @@
-rootProject.name = "ktjsonrpcpeer"
+rootProject.name = "KtJsonRpcPeer"

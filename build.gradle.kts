@@ -3,14 +3,18 @@ plugins {
     kotlin("plugin.serialization") version "1.4.10"
     `maven-publish`
 }
-group = "twitter.qiqiworld1.ktjsonrpcpeer"
-version = "0.6.1"
+group = "com.github.arcticlampyrid.ktjsonrpcpeer"
+version = "0.7.0"
 kotlin {
     explicitApi()
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "1.8"
         }
+    }
+    js {
+        nodejs()
+        browser()
     }
     val hostOs = System.getProperty("os.name")
     val isMingwX64 = hostOs.startsWith("Windows")
@@ -47,8 +51,6 @@ kotlin {
                 implementation(kotlin("test-junit"))
             }
         }
-        val nativeMain by getting
-        val nativeTest by getting
     }
 }
 repositories {
@@ -57,59 +59,41 @@ repositories {
     jcenter()
 }
 configure<PublishingExtension> {
-    publications.forEach { publication ->
-        when (publication) {
-            is MavenPublication -> {
-                with(publication.pom) {
-                    withXml {
-                        val root = asNode()
-                        root.appendNode("name", "twitter.qiqiworld1.ktjsonrpcpeer")
-                        root.appendNode(
-                            "description",
-                            "ktjsonrpcpeer is a Kotlin library that implements JSON-RPC 2.0 in Peer mode.\n" +
-                                    "It's full-duplex, supporting two-way procedure call.\n" +
-                                    "It can work well with WebSocket."
-                        )
-                        root.appendNode("url", "https://github.com/1354092549/ktjsonrpcpeer")
-                    }
-                    licenses {
-                        license {
-                            name.set("BSD 3-Clause \"New\" or \"Revised\" License\n")
-                            url.set("https://github.com/1354092549/ktjsonrpcpeer/blob/master/LICENSE.md")
-                            distribution.set("repo")
-                        }
-                    }
-                    developers {
-                        developer {
-                            id.set("qiqiworld")
-                            name.set("qiqiworld")
-                            email.set("1354092549@qq.com")
-                        }
-                    }
-                    scm {
-                        url.set("https://github.com/1354092549/ktjsonrpcpeer")
-                        connection.set("scm:git:git://github.com/1354092549/ktjsonrpcpeer")
-                        developerConnection.set("scm:git:git://github.com/1354092549/ktjsonrpcpeer")
-                    }
+    publications.withType<MavenPublication>().configureEach {
+        pom {
+            name.set("KtJsonRpcPeer")
+            description.set(
+                "KtJsonRpcPeer is a Kotlin library that implements JSON-RPC 2.0 in Peer mode.\n" +
+                        "It's full-duplex, supporting two-way procedure call.\n" +
+                        "It can work well with WebSocket."
+            )
+            url.set("https://github.com/ArcticLampyrid/KtJsonRpcPeer")
+            licenses {
+                license {
+                    name.set("BSD 3-Clause \"New\" or \"Revised\" License")
+                    url.set("https://github.com/ArcticLampyrid/KtJsonRpcPeer/blob/master/LICENSE.md")
+                    distribution.set("repo")
                 }
             }
-            else -> {
-
+            developers {
+                developer {
+                    id.set("ArcticLampyrid")
+                    name.set("ArcticLampyrid")
+                    email.set("ArcticLampyrid@outlook.com")
+                    timezone.set("Asia/Shanghai")
+                }
+            }
+            scm {
+                url.set("https://github.com/ArcticLampyrid/KtJsonRpcPeer")
+                connection.set("scm:git:git://github.com/ArcticLampyrid/KtJsonRpcPeer.git")
+                developerConnection.set("scm:git:ssh://github.com:ArcticLampyrid/KtJsonRpcPeer.git")
             }
         }
     }
     repositories {
         maven {
-            name = "Bintray"
-            url = uri("https://api.bintray.com/maven/qiqiworld/ktjsonrpcpeer/twitter.qiqiworld1.ktjsonrpcpeer/;publish=1;override=1")
-            credentials {
-                username = System.getenv("BINTRAY_USER")
-                password = System.getenv("BINTRAY_API_KEY")
-            }
-        }
-        maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/1354092549/ktjsonrpcpeer")
+            url = uri("https://maven.pkg.github.com/ArcticLampyrid/ktjsonrpcpeer")
             credentials {
                 username = System.getenv("gpr.usr")
                 password = System.getenv("gpr.key")
