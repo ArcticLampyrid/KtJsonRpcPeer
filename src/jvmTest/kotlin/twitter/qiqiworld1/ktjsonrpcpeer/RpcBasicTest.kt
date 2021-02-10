@@ -60,20 +60,4 @@ class RpcBasicTest {
             assertEquals(JsonNull, r)
         }
     }
-
-    @Test
-    fun keepCompletionCause() {
-        runBlocking {
-            try {
-                val incoming = Channel<ByteArray>(5)
-                val outcoming = Channel<ByteArray>(5)
-                val adapter = RpcChannelAdapter(incoming, outcoming)
-                val rpc = RpcChannel(adapter)
-                incoming.close(AssertionError())
-                rpc.call<String, Array<String>>("test", emptyArray())
-            } catch (e: RpcNotServingException) {
-                assertEquals<Class<*>?>(AssertionError::class.java, e.cause?.javaClass)
-            }
-        }
-    }
 }
