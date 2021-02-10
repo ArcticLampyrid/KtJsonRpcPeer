@@ -3,7 +3,7 @@ plugins {
     kotlin("plugin.serialization") version "1.4.10"
     `maven-publish`
 }
-group = "com.github.arcticlampyrid.ktjsonrpcpeer"
+group = "com.github.ArcticLampyrid.KtJsonRpcPeer"
 version = "0.7.0"
 kotlin {
     explicitApi()
