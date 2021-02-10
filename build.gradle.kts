@@ -4,7 +4,9 @@ plugins {
     `maven-publish`
 }
 group = "com.github.ArcticLampyrid.KtJsonRpcPeer"
-version = "0.7.0"
+if (version.toString() == "unspecified") {
+    version = "0.7.0"
+}
 kotlin {
     explicitApi()
     jvm {
