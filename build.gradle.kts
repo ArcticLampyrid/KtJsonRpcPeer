@@ -95,7 +95,7 @@ configure<PublishingExtension> {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/ArcticLampyrid/ktjsonrpcpeer")
+            url = uri("https://maven.pkg.github.com/ArcticLampyrid/KtJsonRpcPeer")
             credentials {
                 username = System.getenv("gpr.usr")
                 password = System.getenv("gpr.key")
