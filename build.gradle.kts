@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform") version "1.4.10"
     kotlin("plugin.serialization") version "1.4.10"
+    signing
     `maven-publish`
 }
 group = "com.github.ArcticLampyrid.KtJsonRpcPeer"
@@ -60,8 +61,12 @@ repositories {
     mavenCentral()
     jcenter()
 }
+val emptyJavadocJar = tasks.register<Jar>("emptyJavadocJar") {
+    archiveClassifier.set("javadoc")
+}
 configure<PublishingExtension> {
     publications.withType<MavenPublication>().configureEach {
+        artifact(emptyJavadocJar)
         pom {
             name.set("KtJsonRpcPeer")
             description.set(
@@ -101,5 +106,17 @@ configure<PublishingExtension> {
                 password = System.getenv("gpr.key")
             }
         }
+        maven {
+            name = "Sonatype"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = findProperty("sonatypeUsername").toString()
+                password = findProperty("sonatypePassword").toString()
+            }
+        }
     }
+}
+signing {
+    isRequired = false
+    sign(publishing.publications)
 }
