@@ -78,7 +78,7 @@ configure<PublishingExtension> {
             licenses {
                 license {
                     name.set("BSD 3-Clause \"New\" or \"Revised\" License")
-                    url.set("https://github.com/ArcticLampyrid/KtJsonRpcPeer/blob/master/LICENSE.md")
+                    url.set("https://github.com/ArcticLampyrid/KtJsonRpcPeer/blob/main/LICENSE.md")
                     distribution.set("repo")
                 }
             }
