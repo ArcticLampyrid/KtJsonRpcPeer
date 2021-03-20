@@ -1,6 +1,6 @@
 plugins {
-    kotlin("multiplatform") version "1.4.10"
-    kotlin("plugin.serialization") version "1.4.10"
+    kotlin("multiplatform") version "1.4.30"
+    kotlin("plugin.serialization") version "1.4.30"
     signing
     `maven-publish`
 }
@@ -28,14 +28,15 @@ kotlin {
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }
     sourceSets {
+        val coroutinesVersion = "1.4.3"
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
-                implementation("co.touchlab:stately-concurrency:1.1.1")
-                implementation("co.touchlab:stately-isolate:1.1.1-a1")
-                implementation("co.touchlab:stately-iso-collections:1.1.1-a1")
-                compileOnly("io.ktor:ktor-client-core:1.4.1")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
+                implementation("co.touchlab:stately-concurrency:1.1.4")
+                implementation("co.touchlab:stately-isolate:1.1.4-a1")
+                implementation("co.touchlab:stately-iso-collections:1.1.4-a1")
+                implementation("io.ktor:ktor-client-core:1.5.2")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
             }
         }
         val commonTest by getting {
@@ -54,12 +55,15 @@ kotlin {
                 implementation(kotlin("test-junit"))
             }
         }
+        val nativeMain by getting {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion-native-mt")
+            }
+        }
     }
 }
 repositories {
-    mavenLocal()
     mavenCentral()
-    jcenter()
 }
 val emptyJavadocJar = tasks.register<Jar>("emptyJavadocJar") {
     archiveClassifier.set("javadoc")
