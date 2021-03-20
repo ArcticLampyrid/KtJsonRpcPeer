@@ -60,4 +60,17 @@ class RpcBasicTest {
             assertEquals(JsonNull, r)
         }
     }
+
+    @Test
+    fun waitUntilConnectClosed() {
+        runBlocking {
+            val requestChannel = Channel<ByteArray>(5)
+            val responseChannel = Channel<ByteArray>(5)
+            val adapter = RpcChannelAdapter(requestChannel, responseChannel)
+            val server = RpcChannel(adapter)
+            requestChannel.close()
+            responseChannel.close()
+            server.join()
+        }
+    }
 }

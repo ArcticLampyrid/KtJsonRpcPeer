@@ -14,24 +14,22 @@ public class RpcChannel(
     private val adapter: RpcMessageAdapter,
     private val codec: RpcCodec = RpcJsonCodec,
     context: CoroutineContext = Dispatchers.Default
-) {
+) : CoroutineScope by CoroutineScope(context) {
     private val pending = IsoMutableMap<Long, SendChannel<RpcResponse>>()
     private val seq = AtomicLong(0)
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
-    private var completionCause: Throwable? = null
-    public val completion: Deferred<Unit>
 
     init {
-        completion = GlobalScope.async(context) {
+        this.launch {
             while (true) {
                 val msg: ByteArray
                 try {
                     msg = adapter.readMessage()
                 } catch (e: Throwable) {
-                    completionCause = e
+                    this@RpcChannel.cancel("rpc channel not available", e)
                     break
                 }
-                launch {
+                this@RpcChannel.launch {
                     feedData(msg)
                 }
             }
@@ -146,52 +144,51 @@ public class RpcChannel(
         return jsonIgnoringUnknownKeys.decodeFromJsonElement(r)
     }
 
-    public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
-        if (completion.isCompleted) {
-            throw RpcNotServingException(completionCause)
-        }
-        val id = seq.incrementAndGet()
-        val channel = Channel<RpcResponse>(1)
-        pending[id] = channel
-        val response: RpcResponse
-        try {
-            adapter.writeMessage(
-                codec.encodeMessage(
-                    Json.encodeToJsonElement(
-                        RpcCallRequest(
-                            "2.0",
-                            method,
-                            params,
-                            JsonPrimitive(id)
+    public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement =
+        withContext(this.coroutineContext) {
+            val id = seq.incrementAndGet()
+            val channel = Channel<RpcResponse>(1)
+            pending[id] = channel
+            val response: RpcResponse
+            try {
+                adapter.writeMessage(
+                    codec.encodeMessage(
+                        Json.encodeToJsonElement(
+                            RpcCallRequest(
+                                "2.0",
+                                method,
+                                params,
+                                JsonPrimitive(id)
+                            )
                         )
                     )
                 )
-            )
-            withTimeout(5000) {
-                response = channel.receive()
+                withTimeout(5000) {
+                    response = channel.receive()
+                }
+            } catch (e: TimeoutCancellationException) {
+                pending.remove(id)
+                throw e
+            } finally {
+                channel.close()
             }
-        } catch (e: TimeoutCancellationException) {
-            pending.remove(id)
-            throw e
-        } finally {
-            channel.close()
+            return@withContext when (response) {
+                is RpcErrorResponse -> throw RpcTargetException(response.error)
+                is RpcResultResponse -> response.result
+                else -> throw RpcTargetException(RpcError.InternalError)
+            }
         }
-        return when (response) {
-            is RpcErrorResponse -> throw RpcTargetException(response.error)
-            is RpcResultResponse -> response.result
-            else -> throw RpcTargetException(RpcError.InternalError)
-        }
-    }
 
     public suspend inline fun <reified TArgs> notify(method: String, params: TArgs) {
         notifyLowLevel(method, Json.encodeToJsonElement(params))
     }
 
-    public suspend fun notifyLowLevel(method: String, params: JsonElement) {
-        if (completion.isCompleted) {
-            throw RpcNotServingException(completionCause)
-        }
+    public suspend fun notifyLowLevel(method: String, params: JsonElement): Unit = withContext(this.coroutineContext) {
         adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcNotifyRequest("2.0", method, params))))
+    }
+
+    public suspend fun join() {
+        this.coroutineContext[Job]?.join()
     }
 
     public companion object {
