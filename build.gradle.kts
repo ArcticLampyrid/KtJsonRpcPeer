@@ -6,7 +6,7 @@ plugins {
 }
 group = "com.github.ArcticLampyrid.KtJsonRpcPeer"
 if (version.toString() == "unspecified") {
-    version = "0.8.0"
+    version = "0.9.0"
 }
 kotlin {
     explicitApi()
@@ -28,7 +28,7 @@ kotlin {
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }
     sourceSets {
-        val coroutinesVersion = "1.4.3"
+        val coroutinesVersion = "1.4.2"
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")

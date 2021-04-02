@@ -8,13 +8,19 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.jvm.JvmStatic
 
 public class RpcChannel(
     private val adapter: RpcMessageAdapter,
     private val codec: RpcCodec = RpcJsonCodec,
-    context: CoroutineContext = Dispatchers.Default
-) : CoroutineScope by CoroutineScope(context) {
+    private val parentCoroutineContext: CoroutineContext = EmptyCoroutineContext
+) : CoroutineScope {
+    private val supervisor = SupervisorJob(parentCoroutineContext[Job])
+    private val _coroutineContext = parentCoroutineContext + supervisor
+    override val coroutineContext: CoroutineContext
+        get() = _coroutineContext
+
     private val pending = IsoMutableMap<Long, SendChannel<RpcResponse>>()
     private val seq = AtomicLong(0)
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
@@ -188,7 +194,11 @@ public class RpcChannel(
     }
 
     public suspend fun join() {
-        this.coroutineContext[Job]?.join()
+        this.supervisor.join()
+    }
+
+    public suspend fun cancelAndJoin() {
+        this.supervisor.cancelAndJoin()
     }
 
     public companion object {
