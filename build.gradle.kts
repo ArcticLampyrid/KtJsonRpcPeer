@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 plugins {
     kotlin("multiplatform") version "1.4.32"
     kotlin("plugin.serialization") version "1.4.32"
