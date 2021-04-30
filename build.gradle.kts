@@ -1,6 +1,6 @@
 plugins {
-    kotlin("multiplatform") version "1.4.30"
-    kotlin("plugin.serialization") version "1.4.30"
+    kotlin("multiplatform") version "1.4.32"
+    kotlin("plugin.serialization") version "1.4.32"
     signing
     `maven-publish`
 }
@@ -25,7 +25,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.0")
                 implementation("io.ktor:ktor-client-core:1.5.2")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
             }
