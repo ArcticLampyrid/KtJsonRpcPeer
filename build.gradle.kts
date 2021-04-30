@@ -72,6 +72,9 @@ kotlin {
         val macosX64Test by getting {
             dependsOn(nativeCommonTest)
         }
+        all {
+            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+        }
     }
 }
 repositories {
