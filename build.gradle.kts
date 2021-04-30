@@ -19,21 +19,15 @@ kotlin {
         nodejs()
         browser()
     }
-    val hostOs = System.getProperty("os.name")
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-        hostOs == "Mac OS X" -> macosX64("native")
-        hostOs == "Linux" -> linuxX64("native")
-        isMingwX64 -> mingwX64("native")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-    }
+    macosX64()
+    linuxX64()
+    mingwX64()
     sourceSets {
-        val coroutinesVersion = "1.4.2"
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
                 implementation("io.ktor:ktor-client-core:1.5.2")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
             }
         }
         val commonTest by getting {
@@ -52,10 +46,29 @@ kotlin {
                 implementation(kotlin("test-junit"))
             }
         }
-        val nativeMain by getting {
-            dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion-native-mt")
-            }
+        val nativeCommonMain by creating {
+            dependsOn(commonMain)
+        }
+        val nativeCommonTest by creating {
+            dependsOn(commonTest)
+        }
+        val linuxX64Main by getting {
+            dependsOn(nativeCommonMain)
+        }
+        val linuxX64Test by getting {
+            dependsOn(nativeCommonTest)
+        }
+        val mingwX64Main by getting {
+            dependsOn(nativeCommonMain)
+        }
+        val mingwX64Test by getting {
+            dependsOn(nativeCommonTest)
+        }
+        val macosX64Main by getting {
+            dependsOn(nativeCommonMain)
+        }
+        val macosX64Test by getting {
+            dependsOn(nativeCommonTest)
         }
     }
 }
