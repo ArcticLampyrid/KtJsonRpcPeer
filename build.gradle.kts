@@ -75,7 +75,7 @@ kotlin {
 repositories {
     mavenCentral()
 }
-val emptyJavadocJar = tasks.register<Jar>("emptyJavadocJar") {
+val emptyJavadocJar by tasks.creating(Jar::class) {
     archiveClassifier.set("javadoc")
 }
 configure<PublishingExtension> {
