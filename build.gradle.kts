@@ -8,7 +8,7 @@ plugins {
 }
 group = "com.github.ArcticLampyrid.KtJsonRpcPeer"
 if (version.toString() == "unspecified") {
-    version = "0.9.0"
+    version = "0.10.0"
 }
 kotlin {
     explicitApi()
