@@ -32,9 +32,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
-                implementation("co.touchlab:stately-concurrency:1.1.4")
-                implementation("co.touchlab:stately-isolate:1.1.4-a1")
-                implementation("co.touchlab:stately-iso-collections:1.1.4-a1")
                 implementation("io.ktor:ktor-client-core:1.5.2")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
             }

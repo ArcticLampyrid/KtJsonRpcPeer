@@ -1,7 +1,6 @@
 package com.github.arcticlampyrid.ktjsonrpcpeer
 
-import co.touchlab.stately.collections.IsoMutableMap
-import co.touchlab.stately.concurrency.AtomicLong
+import com.github.arcticlampyrid.ktjsonrpcpeer.internal.PendingMap
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -21,8 +20,7 @@ public class RpcChannel(
     override val coroutineContext: CoroutineContext
         get() = _coroutineContext
 
-    private val pending = IsoMutableMap<Long, SendChannel<RpcResponse>>()
-    private val seq = AtomicLong(0)
+    private val pending = PendingMap<SendChannel<RpcResponse>>()
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
 
     init {
@@ -152,9 +150,8 @@ public class RpcChannel(
 
     public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement =
         withContext(this.coroutineContext) {
-            val id = seq.incrementAndGet()
             val channel = Channel<RpcResponse>(1)
-            pending[id] = channel
+            val id = pending.new(channel)
             val response: RpcResponse
             try {
                 adapter.writeMessage(
