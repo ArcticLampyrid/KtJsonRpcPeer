@@ -1,4 +1,4 @@
-package com.github.arcticlampyrid.ktjsonrpcpeer.ktjsonrpcpeer
+package com.github.arcticlampyrid.ktjsonrpcpeer
 
 import com.github.arcticlampyrid.ktjsonrpcpeer.internal.PendingMap
 import kotlin.native.concurrent.TransferMode
