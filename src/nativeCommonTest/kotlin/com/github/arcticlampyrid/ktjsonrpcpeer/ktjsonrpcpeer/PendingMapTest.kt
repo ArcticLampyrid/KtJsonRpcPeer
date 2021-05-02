@@ -27,4 +27,17 @@ class PendingMapTest {
             }
         }
     }
+
+    @Test
+    fun multiThreadTestWithCreatingOnNonMainThread() {
+        withWorker {
+            execute(TransferMode.SAFE, {}) {
+                val x = PendingMap<String>().freeze()
+                val id = x.new("Hello").freeze()
+                Pair(x, id).freeze()
+            }.consume {
+                assertEquals("Hello", it.first.remove(it.second))
+            }
+        }
+    }
 }
