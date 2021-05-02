@@ -1,6 +1,7 @@
 package com.github.arcticlampyrid.ktjsonrpcpeer
 
 import com.github.arcticlampyrid.ktjsonrpcpeer.internal.PendingMap
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -14,12 +15,14 @@ public class RpcChannel(
     private val adapter: RpcMessageAdapter,
     private val codec: RpcCodec = RpcJsonCodec,
     parentCoroutineContext: CoroutineContext = EmptyCoroutineContext,
-    private val service: RpcService = RpcService.Empty
+    service: RpcService = RpcService.Empty
 ) : CoroutineScope {
     private val supervisor = SupervisorJob(parentCoroutineContext[Job])
     override val coroutineContext: CoroutineContext = parentCoroutineContext + supervisor
 
     private val pending = PendingMap<SendChannel<RpcResponse>>()
+    private val _service = atomic(service)
+    public var service: RpcService by _service
 
     public constructor(
         adapter: RpcMessageAdapter,
@@ -95,12 +98,12 @@ public class RpcChannel(
     private suspend fun handleMsg(msg: RpcMessage): RpcResponse? {
         when (msg) {
             is RpcNotifyRequest -> {
-                val processor = service.method[msg.method] ?: return null
+                val processor = _service.value.method[msg.method] ?: return null
                 processor(msg.params)
                 return null
             }
             is RpcCallRequest -> {
-                val processor = service.method[msg.method]
+                val processor = _service.value.method[msg.method]
                     ?: return RpcErrorResponse(msg.id, RpcError.MethodNotFound)
                 return try {
                     RpcResultResponse(msg.id, processor(msg.params))

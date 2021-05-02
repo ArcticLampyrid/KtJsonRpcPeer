@@ -1,14 +1,19 @@
 @file:Suppress("UNUSED_VARIABLE")
-
+buildscript {
+    dependencies {
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.16.1")
+    }
+}
 plugins {
     kotlin("multiplatform") version "1.4.32"
     kotlin("plugin.serialization") version "1.4.32"
     signing
     `maven-publish`
 }
+apply(plugin = "kotlinx-atomicfu")
 group = "com.github.ArcticLampyrid.KtJsonRpcPeer"
 if (version.toString() == "unspecified") {
-    version = "0.11.0"
+    version = "0.11.1"
 }
 kotlin {
     explicitApi()
