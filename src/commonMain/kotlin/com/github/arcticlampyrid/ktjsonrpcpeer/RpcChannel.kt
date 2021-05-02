@@ -13,12 +13,10 @@ import kotlin.jvm.JvmStatic
 public class RpcChannel(
     private val adapter: RpcMessageAdapter,
     private val codec: RpcCodec = RpcJsonCodec,
-    private val parentCoroutineContext: CoroutineContext = EmptyCoroutineContext
+    parentCoroutineContext: CoroutineContext = EmptyCoroutineContext
 ) : CoroutineScope {
     private val supervisor = SupervisorJob(parentCoroutineContext[Job])
-    private val _coroutineContext = parentCoroutineContext + supervisor
-    override val coroutineContext: CoroutineContext
-        get() = _coroutineContext
+    override val coroutineContext: CoroutineContext = parentCoroutineContext + supervisor
 
     private val pending = PendingMap<SendChannel<RpcResponse>>()
     private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
