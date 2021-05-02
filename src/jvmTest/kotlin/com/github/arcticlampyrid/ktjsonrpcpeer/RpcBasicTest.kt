@@ -14,9 +14,12 @@ class RpcBasicTest {
             val responseChannel = Channel<ByteArray>(5)
             val serverAdapter = RpcChannelAdapter(requestChannel, responseChannel)
             val clientAdapter = RpcChannelAdapter(responseChannel, requestChannel)
-            val server = RpcChannel(serverAdapter)
-            server.register<String, JsonArray>("test") {
-                "hello" + it[0].jsonPrimitive.content
+
+            @Suppress("UNUSED_VARIABLE")
+            val server = RpcChannel(serverAdapter) {
+                register<String, JsonArray>("test") {
+                    "hello" + it[0].jsonPrimitive.content
+                }
             }
             val client = RpcChannel(clientAdapter)
             val result: String = client.call("test", arrayOf("123"))
@@ -31,9 +34,12 @@ class RpcBasicTest {
             val responseChannel = Channel<ByteArray>(5)
             val serverAdapter = RpcChannelAdapter(requestChannel, responseChannel)
             val clientAdapter = RpcChannelAdapter(responseChannel, requestChannel)
-            val server = RpcChannel(serverAdapter)
-            server.register<String, Unit>("test") {
-                "hello"
+
+            @Suppress("UNUSED_VARIABLE")
+            val server = RpcChannel(serverAdapter) {
+                register<String, Unit>("test") {
+                    "hello"
+                }
             }
             val client = RpcChannel(clientAdapter)
             client.call<Unit, JsonArray>("test", buildJsonArray {
@@ -49,9 +55,12 @@ class RpcBasicTest {
             val responseChannel = Channel<ByteArray>(5)
             val serverAdapter = RpcChannelAdapter(requestChannel, responseChannel)
             val clientAdapter = RpcChannelAdapter(responseChannel, requestChannel)
-            val server = RpcChannel(serverAdapter)
-            server.register<Unit, JsonElement>("test") {
 
+            @Suppress("UNUSED_VARIABLE")
+            val server = RpcChannel(serverAdapter) {
+                register<Unit, JsonElement>("test") {
+
+                }
             }
             val client = RpcChannel(clientAdapter)
             val r = client.call<JsonElement, JsonArray>("test", buildJsonArray {

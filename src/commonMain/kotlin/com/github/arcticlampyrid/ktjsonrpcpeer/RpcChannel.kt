@@ -13,13 +13,20 @@ import kotlin.jvm.JvmStatic
 public class RpcChannel(
     private val adapter: RpcMessageAdapter,
     private val codec: RpcCodec = RpcJsonCodec,
-    parentCoroutineContext: CoroutineContext = EmptyCoroutineContext
+    parentCoroutineContext: CoroutineContext = EmptyCoroutineContext,
+    private val service: RpcService = RpcService.Empty
 ) : CoroutineScope {
     private val supervisor = SupervisorJob(parentCoroutineContext[Job])
     override val coroutineContext: CoroutineContext = parentCoroutineContext + supervisor
 
     private val pending = PendingMap<SendChannel<RpcResponse>>()
-    private val registeredMethod = HashMap<String, suspend (params: JsonElement) -> JsonElement>()
+
+    public constructor(
+        adapter: RpcMessageAdapter,
+        codec: RpcCodec = RpcJsonCodec,
+        parentCoroutineContext: CoroutineContext = EmptyCoroutineContext,
+        serviceDefiner: RpcServiceDefiner
+    ) : this(adapter, codec, parentCoroutineContext, serviceDefiner.build())
 
     init {
         this.launch {
@@ -88,12 +95,12 @@ public class RpcChannel(
     private suspend fun handleMsg(msg: RpcMessage): RpcResponse? {
         when (msg) {
             is RpcNotifyRequest -> {
-                val processor = registeredMethod[msg.method] ?: return null
+                val processor = service.method[msg.method] ?: return null
                 processor(msg.params)
                 return null
             }
             is RpcCallRequest -> {
-                val processor = registeredMethod[msg.method]
+                val processor = service.method[msg.method]
                     ?: return RpcErrorResponse(msg.id, RpcError.MethodNotFound)
                 return try {
                     RpcResultResponse(msg.id, processor(msg.params))
@@ -110,29 +117,6 @@ public class RpcChannel(
                 return null
             }
         }
-    }
-
-    public inline fun <reified TResult, reified TArgs> register(
-        method: String,
-        noinline processor: suspend (params: TArgs) -> TResult
-    ) {
-        registerLowLevel(method) {
-            val p = if (TArgs::class == Unit::class) {
-                Unit as TArgs
-            } else {
-                Json.decodeFromJsonElement<TArgs>(it)
-            }
-            val r = processor(p)
-            if (TResult::class == Unit::class) {
-                JsonNull
-            } else {
-                Json.encodeToJsonElement(r)
-            }
-        }
-    }
-
-    public fun registerLowLevel(method: String, processor: suspend (params: JsonElement) -> JsonElement) {
-        registeredMethod[method] = processor
     }
 
     public suspend inline fun <reified TResult, reified TArgs> call(method: String, params: TArgs): TResult {
