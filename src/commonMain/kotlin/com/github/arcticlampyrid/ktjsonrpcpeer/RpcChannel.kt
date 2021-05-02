@@ -22,7 +22,11 @@ public class RpcChannel(
 
     private val pending = PendingMap<SendChannel<RpcResponse>>()
     private val _service = atomic(service)
-    public var service: RpcService by _service
+    public var service: RpcService
+        get() = _service.value
+        set(value) {
+            _service.value = value
+        }
 
     public constructor(
         adapter: RpcMessageAdapter,
