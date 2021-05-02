@@ -111,9 +111,6 @@ public class RpcChannel(
                 channel?.send(msg)
                 return null
             }
-            else -> {
-                return null
-            }
         }
     }
 
@@ -178,7 +175,6 @@ public class RpcChannel(
             return@withContext when (response) {
                 is RpcErrorResponse -> throw RpcTargetException(response.error)
                 is RpcResultResponse -> response.result
-                else -> throw RpcTargetException(RpcError.InternalError)
             }
         }
 
