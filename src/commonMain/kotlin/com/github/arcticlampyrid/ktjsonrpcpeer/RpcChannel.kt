@@ -1,3 +1,5 @@
+@file:OptIn(RpcInternalModelApi::class)
+
 package com.github.arcticlampyrid.ktjsonrpcpeer
 
 import com.github.arcticlampyrid.ktjsonrpcpeer.internal.PendingMap
@@ -5,7 +7,6 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -53,53 +54,42 @@ public class RpcChannel(
     }
 
     private suspend fun feedData(msg: ByteArray) {
-        val root: JsonElement
+        val root: RpcMessage
         try {
             root = codec.decodeMessage(msg)
         } catch (e: Exception) {
             adapter.writeMessage(
                 codec.encodeMessage(
-                    Json.encodeToJsonElement(
-                        RpcErrorResponse(
-                            JsonNull,
-                            RpcError.ParseError
-                        )
+                    RpcErrorResponse(
+                        JsonNull,
+                        RpcError.ParseError
                     )
                 )
             )
             return
         }
-        if (root is JsonArray) {
-            val responses = ArrayList<RpcResponse>()
-            for (x in root) {
-                responses.add(handleMsg(x) ?: continue)
-            }
-            if (responses.size != 0) {
-                adapter.writeMessage(
-                    codec.encodeMessage(
-                        Json.encodeToJsonElement(
-                            ListSerializer(RpcMessageSerializer),
-                            responses
-                        )
+        when (root) {
+            is RpcBatchMessage -> {
+                val responses = ArrayList<RpcResponse>()
+                for (x in root.content) {
+                    responses.add(handleMsg(x) ?: continue)
+                }
+                if (responses.size != 0) {
+                    adapter.writeMessage(
+                        codec.encodeMessage(RpcBatchMessage(responses))
                     )
-                )
+                }
             }
-        } else {
-            val r = handleMsg(root)
-            if (r != null) {
-                adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcMessageSerializer, r)))
+            is RpcSingleMessage -> {
+                val r = handleMsg(root)
+                if (r != null) {
+                    adapter.writeMessage(codec.encodeMessage(r))
+                }
             }
         }
     }
 
-    private suspend fun handleMsg(msg: JsonElement): RpcResponse? {
-        if (msg !is JsonObject) {
-            return RpcErrorResponse(JsonNull, RpcError.InvalidRequest)
-        }
-        return handleMsg(Json.decodeFromJsonElement(RpcMessageSerializer, msg))
-    }
-
-    private suspend fun handleMsg(msg: RpcMessage): RpcResponse? {
+    private suspend fun handleMsg(msg: RpcSingleMessage): RpcResponse? {
         when (msg) {
             is RpcNotifyRequest -> {
                 val processor = _service.value.method[msg.method] ?: return null
@@ -142,13 +132,11 @@ public class RpcChannel(
             try {
                 adapter.writeMessage(
                     codec.encodeMessage(
-                        Json.encodeToJsonElement(
-                            RpcCallRequest(
-                                "2.0",
-                                method,
-                                params,
-                                JsonPrimitive(id)
-                            )
+                        RpcCallRequest(
+                            "2.0",
+                            method,
+                            params,
+                            JsonPrimitive(id)
                         )
                     )
                 )
@@ -172,7 +160,7 @@ public class RpcChannel(
     }
 
     public suspend fun notifyLowLevel(method: String, params: JsonElement): Unit = withContext(this.coroutineContext) {
-        adapter.writeMessage(codec.encodeMessage(Json.encodeToJsonElement(RpcNotifyRequest("2.0", method, params))))
+        adapter.writeMessage(codec.encodeMessage(RpcNotifyRequest("2.0", method, params)))
     }
 
     public suspend fun join() {

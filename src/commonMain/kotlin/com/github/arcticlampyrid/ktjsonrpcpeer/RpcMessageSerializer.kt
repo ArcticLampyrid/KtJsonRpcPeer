@@ -1,19 +1,22 @@
+@file:OptIn(ExperimentalSerializationApi::class, RpcInternalModelApi::class)
+
 package com.github.arcticlampyrid.ktjsonrpcpeer
 
-import kotlinx.serialization.*
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.JsonDecoder
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.*
+import kotlin.jvm.JvmStatic
 
-@OptIn(ExperimentalSerializationApi::class)
-internal object RpcMessageSerializer : KSerializer<RpcMessage> {
-    private fun selectDeserializer(element: JsonElement): DeserializationStrategy<out RpcMessage> {
+internal object RpcSingleMessageSerializer : KSerializer<RpcSingleMessage> {
+    private fun selectDeserializer(element: JsonElement): DeserializationStrategy<out RpcSingleMessage> {
         if (element !is JsonObject) {
             throw IllegalArgumentException()
         }
@@ -30,19 +33,23 @@ internal object RpcMessageSerializer : KSerializer<RpcMessage> {
         }
     }
 
-    override fun deserialize(decoder: Decoder): RpcMessage {
+    internal fun deserializeTree(json: Json, tree: JsonElement): RpcSingleMessage {
+        @Suppress("UNCHECKED_CAST")
+        val actualSerializer = selectDeserializer(tree) as DeserializationStrategy<RpcSingleMessage>
+        return json.decodeFromJsonElement(actualSerializer, tree)
+    }
+
+    override fun deserialize(decoder: Decoder): RpcSingleMessage {
         val input = decoder as JsonDecoder
         val tree = input.decodeJsonElement()
-        @Suppress("UNCHECKED_CAST")
-        val actualSerializer = selectDeserializer(tree) as DeserializationStrategy<RpcMessage>
-        return input.json.decodeFromJsonElement(actualSerializer, tree)
+        return deserializeTree(input.json, tree)
     }
 
     @InternalSerializationApi
     override val descriptor: SerialDescriptor =
-        buildSerialDescriptor("RpcMessageSerializer", PolymorphicKind.SEALED)
+        buildSerialDescriptor("RpcSingleMessageSerializer", PolymorphicKind.SEALED)
 
-    override fun serialize(encoder: Encoder, value: RpcMessage) {
+    override fun serialize(encoder: Encoder, value: RpcSingleMessage) {
         val actualSerializer = when (value) {
             is RpcCallRequest -> RpcCallRequest.serializer()
             is RpcNotifyRequest -> RpcNotifyRequest.serializer()
@@ -50,6 +57,30 @@ internal object RpcMessageSerializer : KSerializer<RpcMessage> {
             is RpcResultResponse -> RpcResultResponse.serializer()
         }
         @Suppress("UNCHECKED_CAST")
-        (actualSerializer as KSerializer<RpcMessage>).serialize(encoder, value)
+        (actualSerializer as KSerializer<RpcSingleMessage>).serialize(encoder, value)
     }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+internal object RpcMessageSerializer : KSerializer<RpcMessage> {
+    @JvmStatic
+    private val RpcSingleMessageListSerializer = ListSerializer(RpcSingleMessageSerializer)
+
+    override fun deserialize(decoder: Decoder): RpcMessage {
+        val input = decoder as JsonDecoder
+        return when (val tree = input.decodeJsonElement()) {
+            is JsonArray -> RpcBatchMessage(input.json.decodeFromJsonElement(RpcSingleMessageListSerializer, tree))
+            else -> RpcSingleMessageSerializer.deserializeTree(input.json, tree)
+        }
+    }
+
+    @InternalSerializationApi
+    override val descriptor: SerialDescriptor =
+        buildSerialDescriptor("RpcMessageSerializer", PolymorphicKind.SEALED)
+
+    override fun serialize(encoder: Encoder, value: RpcMessage) =
+        when (value) {
+            is RpcSingleMessage -> RpcSingleMessageSerializer.serialize(encoder, value)
+            is RpcBatchMessage -> RpcSingleMessageListSerializer.serialize(encoder, value.content)
+        }
 }
