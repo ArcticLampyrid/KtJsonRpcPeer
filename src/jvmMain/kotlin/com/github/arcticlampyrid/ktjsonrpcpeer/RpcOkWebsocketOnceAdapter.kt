@@ -1,10 +1,10 @@
 package com.github.arcticlampyrid.ktjsonrpcpeer
 
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.receiveOrNull
-import kotlinx.coroutines.channels.sendBlocking
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.launch
 import okhttp3.Response
 import okhttp3.WebSocket
@@ -29,17 +29,18 @@ public class RpcOkWebsocketOnceAdapter private constructor(
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        incoming.sendBlocking(text.toByteArray())
+        incoming.trySendBlocking(text.toByteArray()).getOrThrow()
     }
 
     override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-        incoming.sendBlocking(bytes.toByteArray())
+        incoming.trySendBlocking(bytes.toByteArray()).getOrThrow()
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onOpen(webSocket: WebSocket, response: Response) {
         GlobalScope.launch(Dispatchers.IO) {
             while (true) {
-                webSocket.send(ByteString.of(*outcoming.receiveOrNull() ?: break))
+                webSocket.send(ByteString.of(*outcoming.receiveCatching().getOrNull() ?: break))
             }
         }
     }

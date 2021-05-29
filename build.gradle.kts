@@ -5,8 +5,8 @@ buildscript {
     }
 }
 plugins {
-    kotlin("multiplatform") version "1.4.32"
-    kotlin("plugin.serialization") version "1.4.32"
+    kotlin("multiplatform") version "1.5.10"
+    kotlin("plugin.serialization") version "1.5.10"
     signing
     `maven-publish`
 }
@@ -17,11 +17,7 @@ if (version.toString() == "unspecified") {
 }
 kotlin {
     explicitApi()
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
-        }
-    }
+    jvm()
     js {
         nodejs()
         browser()
@@ -32,8 +28,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.0")
-                implementation("io.ktor:ktor-client-core:1.5.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+                implementation("io.ktor:ktor-client-core:1.6.0")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
             }
         }
