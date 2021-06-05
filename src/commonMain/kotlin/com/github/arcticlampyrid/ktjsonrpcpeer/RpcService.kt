@@ -26,7 +26,7 @@ public class RpcService internal constructor(
                         RpcResultResponse(msg.id, processor(msg.params))
                     } catch (e: RpcTargetException) {
                         RpcErrorResponse(msg.id, e.info)
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         RpcErrorResponse(msg.id, RpcError(-32000, e.message ?: "Unknown error"))
                     }
                 } ?: RpcErrorResponse(msg.id, RpcError.MethodNotFound)
