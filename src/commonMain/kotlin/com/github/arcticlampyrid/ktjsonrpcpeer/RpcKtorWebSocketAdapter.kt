@@ -9,7 +9,7 @@ public class RpcKtorWebSocketAdapter(private val session: WebSocketSession) : Rp
                 require(fin)
                 data
             }
-            else -> throw Exception("not support to process " + frame.frameType.name)
+            else -> throw IllegalStateException("not support to process " + frame.frameType.name)
         }
 
     override suspend fun writeMessage(msg: ByteArray) {
