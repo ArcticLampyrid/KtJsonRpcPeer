@@ -68,24 +68,22 @@ public class RpcChannel(
             )
             return
         }
-        when (root) {
-            is RpcBatchMessage -> {
-                val responses = ArrayList<RpcResponse>()
-                for (x in root.content) {
-                    responses.add(handleMsg(x) ?: continue)
+        val response = when (root) {
+            is RpcBatchMessage ->
+                root.content.mapNotNull {
+                    handleMsg(it)
+                }.takeUnless {
+                    it.isEmpty()
+                }?.let {
+                    RpcBatchMessage(it)
                 }
-                if (responses.size != 0) {
-                    adapter.writeMessage(
-                        codec.encodeMessage(RpcBatchMessage(responses))
-                    )
-                }
-            }
-            is RpcSingleMessage -> {
-                val r = handleMsg(root)
-                if (r != null) {
-                    adapter.writeMessage(codec.encodeMessage(r))
-                }
-            }
+            is RpcSingleMessage ->
+                handleMsg(root)
+        }
+        response?.let {
+            adapter.writeMessage(
+                codec.encodeMessage(it)
+            )
         }
     }
 
