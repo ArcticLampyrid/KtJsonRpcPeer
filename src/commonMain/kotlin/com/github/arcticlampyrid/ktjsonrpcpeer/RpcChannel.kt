@@ -7,9 +7,13 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.*
+import kotlinx.serialization.serializer
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.jvm.JvmName
 import kotlin.jvm.JvmStatic
 
 public class RpcChannel(
@@ -99,12 +103,31 @@ public class RpcChannel(
         }
     }
 
+    @JvmName("callReified")
     public suspend inline fun <reified TResult, reified TArgs> call(method: String, params: TArgs): TResult {
-        val r = callLowLevel(method, Json.encodeToJsonElement(params))
-        if (TResult::class == Unit::class) {
-            return Unit as TResult
-        }
-        return jsonIgnoringUnknownKeys.decodeFromJsonElement(r)
+        val resultDeserializer =
+            if (TResult::class == Unit::class) null
+            else serializer<TResult>()
+        val argSerializer =
+            if (TArgs::class == Unit::class) null
+            else serializer<TArgs>()
+        return call(method, resultDeserializer, argSerializer, params)
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    public suspend inline fun <TResult, TArgs> call(
+        method: String,
+        resultDeserializer: DeserializationStrategy<TResult>?,
+        argSerializer: SerializationStrategy<TArgs>?,
+        params: TArgs
+    ): TResult {
+        val r = callLowLevel(method, argSerializer?.let { s ->
+            Json.encodeToJsonElement(s, params)
+        } ?: JsonNull)
+        @Suppress("UNCHECKED_CAST")
+        return resultDeserializer?.let { s ->
+            jsonIgnoringUnknownKeys.decodeFromJsonElement(s, r)
+        } ?: Unit as TResult
     }
 
     public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement =
@@ -138,8 +161,23 @@ public class RpcChannel(
             }
         }
 
+    @JvmName("notifyReified")
     public suspend inline fun <reified TArgs> notify(method: String, params: TArgs) {
-        notifyLowLevel(method, Json.encodeToJsonElement(params))
+        val argSerializer =
+            if (TArgs::class == Unit::class) null
+            else serializer<TArgs>()
+        notify(method, argSerializer, params)
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    public suspend inline fun <TArgs> notify(
+        method: String,
+        argSerializer: SerializationStrategy<TArgs>?,
+        params: TArgs
+    ) {
+        notifyLowLevel(method, argSerializer?.let { s ->
+            Json.encodeToJsonElement(s, params)
+        } ?: JsonNull)
     }
 
     public suspend fun notifyLowLevel(method: String, params: JsonElement): Unit = withContext(this.coroutineContext) {
