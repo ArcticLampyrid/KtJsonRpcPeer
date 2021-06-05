@@ -88,28 +88,13 @@ public class RpcChannel(
     }
 
     private suspend fun handleMsg(msg: RpcSingleMessage): RpcResponse? {
-        when (msg) {
-            is RpcNotifyRequest -> {
-                val processor = _service.value.method[msg.method] ?: return null
-                processor(msg.params)
-                return null
-            }
-            is RpcCallRequest -> {
-                val processor = _service.value.method[msg.method]
-                    ?: return RpcErrorResponse(msg.id, RpcError.MethodNotFound)
-                return try {
-                    RpcResultResponse(msg.id, processor(msg.params))
-                } catch (e: RpcTargetException) {
-                    RpcErrorResponse(msg.id, e.info)
-                } catch (e: Exception) {
-                    RpcErrorResponse(msg.id, RpcError(-32000, e.message ?: "Unknown error"))
-                }
-            }
+        return when (msg) {
+            is RpcRequest -> _service.value.handleRequest(msg)
             is RpcResponse -> {
                 val id = msg.id.jsonPrimitive.long
                 val channel = pending.remove(id)
                 channel?.send(msg)
-                return null
+                null
             }
         }
     }
