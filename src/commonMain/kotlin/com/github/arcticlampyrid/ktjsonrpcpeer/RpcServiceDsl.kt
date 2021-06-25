@@ -2,6 +2,7 @@ package com.github.arcticlampyrid.ktjsonrpcpeer
 
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -16,31 +17,29 @@ public class RpcServiceDsl internal constructor() {
         name: String,
         noinline processor: suspend (params: TArgs) -> TResult
     ) {
-        val resultSerializer =
-            if (TResult::class == Unit::class) null
-            else serializer<TResult>()
-        val argDeserializer =
-            if (TArgs::class == Unit::class) null
-            else serializer<TArgs>()
+        val resultSerializer = serializer<TResult>()
+        val argDeserializer = serializer<TArgs>()
         register(name, resultSerializer, argDeserializer, processor)
     }
 
     @Suppress("NOTHING_TO_INLINE")
     public inline fun <TResult, TArgs> register(
         name: String,
-        resultSerializer: SerializationStrategy<TResult>?,
-        argDeserializer: DeserializationStrategy<TArgs>?,
+        resultSerializer: SerializationStrategy<TResult>,
+        argDeserializer: DeserializationStrategy<TArgs>,
         noinline processor: suspend (params: TArgs) -> TResult
     ) {
         registerLowLevel(name) {
             @Suppress("UNCHECKED_CAST")
-            val p = argDeserializer?.let { s ->
-                Json.decodeFromJsonElement(s, it)
-            } ?: Unit as TArgs
+            val p = when (argDeserializer) {
+                Unit.serializer() -> Unit as TArgs
+                else -> RpcChannel.jsonIgnoringUnknownKeys.decodeFromJsonElement(argDeserializer, it)
+            }
             val result = processor(p)
-            resultSerializer?.let { s ->
-                Json.encodeToJsonElement(s, result)
-            } ?: JsonNull
+            when (resultSerializer) {
+                Unit.serializer() -> JsonNull
+                else -> Json.encodeToJsonElement(resultSerializer, result)
+            }
         }
     }
 

@@ -7,6 +7,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.*
 import kotlinx.serialization.serializer
 import kotlin.coroutines.CoroutineContext
@@ -108,29 +109,29 @@ public class RpcChannel(
 
     @JvmName("callReified")
     public suspend inline fun <reified TResult, reified TArgs> call(method: String, params: TArgs): TResult {
-        val resultDeserializer =
-            if (TResult::class == Unit::class) null
-            else serializer<TResult>()
-        val argSerializer =
-            if (TArgs::class == Unit::class) null
-            else serializer<TArgs>()
+        val resultDeserializer = serializer<TResult>()
+        val argSerializer = serializer<TArgs>()
         return call(method, resultDeserializer, argSerializer, params)
     }
 
     @Suppress("NOTHING_TO_INLINE")
     public suspend inline fun <TResult, TArgs> call(
         method: String,
-        resultDeserializer: DeserializationStrategy<TResult>?,
-        argSerializer: SerializationStrategy<TArgs>?,
+        resultDeserializer: DeserializationStrategy<TResult>,
+        argSerializer: SerializationStrategy<TArgs>,
         params: TArgs
     ): TResult {
-        val r = callLowLevel(method, argSerializer?.let { s ->
-            Json.encodeToJsonElement(s, params)
-        } ?: JsonNull)
+        val r = callLowLevel(
+            method, when (argSerializer) {
+                Unit.serializer() -> JsonNull
+                else -> Json.encodeToJsonElement(argSerializer, params)
+            }
+        )
         @Suppress("UNCHECKED_CAST")
-        return resultDeserializer?.let { s ->
-            jsonIgnoringUnknownKeys.decodeFromJsonElement(s, r)
-        } ?: Unit as TResult
+        return when (resultDeserializer) {
+            Unit.serializer() -> Unit as TResult
+            else -> jsonIgnoringUnknownKeys.decodeFromJsonElement(resultDeserializer, r)
+        }
     }
 
     public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
@@ -165,21 +166,22 @@ public class RpcChannel(
 
     @JvmName("notifyReified")
     public suspend inline fun <reified TArgs> notify(method: String, params: TArgs) {
-        val argSerializer =
-            if (TArgs::class == Unit::class) null
-            else serializer<TArgs>()
+        val argSerializer = serializer<TArgs>()
         notify(method, argSerializer, params)
     }
 
     @Suppress("NOTHING_TO_INLINE")
     public suspend inline fun <TArgs> notify(
         method: String,
-        argSerializer: SerializationStrategy<TArgs>?,
+        argSerializer: SerializationStrategy<TArgs>,
         params: TArgs
     ) {
-        notifyLowLevel(method, argSerializer?.let { s ->
-            Json.encodeToJsonElement(s, params)
-        } ?: JsonNull)
+        notifyLowLevel(
+            method, when (argSerializer) {
+                Unit.serializer() -> JsonNull
+                else -> Json.encodeToJsonElement(argSerializer, params)
+            }
+        )
     }
 
     public suspend fun notifyLowLevel(method: String, params: JsonElement) {
