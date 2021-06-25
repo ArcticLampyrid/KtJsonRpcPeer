@@ -13,7 +13,7 @@ plugins {
 apply(plugin = "kotlinx-atomicfu")
 group = "com.github.ArcticLampyrid.KtJsonRpcPeer"
 if (version.toString() == "unspecified") {
-    version = "0.12.2"
+    version = "0.12.3"
 }
 kotlin {
     explicitApi()
