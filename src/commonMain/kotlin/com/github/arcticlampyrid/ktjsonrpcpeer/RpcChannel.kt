@@ -152,6 +152,9 @@ public class RpcChannel(
                 cont.invokeOnCancellation {
                     pending.remove(id)
                 }
+                if (!isActive && cont.isActive) {
+                    cont.cancel(CancellationException("RpcChannel is closed"))
+                }
             }
         }
         return when (response) {
