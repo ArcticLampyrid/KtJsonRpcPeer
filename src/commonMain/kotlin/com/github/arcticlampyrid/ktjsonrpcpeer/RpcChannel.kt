@@ -5,14 +5,13 @@ package com.github.arcticlampyrid.ktjsonrpcpeer
 import com.github.arcticlampyrid.ktjsonrpcpeer.internal.PendingMap
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.*
 import kotlinx.serialization.serializer
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.resume
 import kotlin.jvm.JvmName
 import kotlin.jvm.JvmStatic
 
@@ -25,7 +24,7 @@ public class RpcChannel(
     private val supervisor = SupervisorJob(parentCoroutineContext[Job])
     override val coroutineContext: CoroutineContext = parentCoroutineContext + supervisor
 
-    private val pending = PendingMap<SendChannel<RpcResponse>>()
+    private val pending = PendingMap<CancellableContinuation<RpcResponse>>()
     private val _service = atomic(service)
     public var service: RpcService
         get() = _service.value
@@ -41,6 +40,11 @@ public class RpcChannel(
     ) : this(adapter, codec, parentCoroutineContext, serviceDefiner.build())
 
     init {
+        supervisor.invokeOnCompletion {
+            pending.forEach {
+                it.value.cancel(CancellationException("RpcChannel is closing"))
+            }
+        }
         this.launch {
             while (true) {
                 val msg: ByteArray
@@ -96,8 +100,7 @@ public class RpcChannel(
             is RpcRequest -> _service.value.handleRequest(msg)
             is RpcResponse -> {
                 val id = msg.id.jsonPrimitive.long
-                val channel = pending.remove(id)
-                channel?.send(msg)
+                pending.remove(id)?.resume(msg)
                 null
             }
         }
@@ -130,36 +133,32 @@ public class RpcChannel(
         } ?: Unit as TResult
     }
 
-    public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement =
-        withContext(this.coroutineContext) {
-            val channel = Channel<RpcResponse>(1)
-            val id = pending.new(channel)
-            val response: RpcResponse
-            try {
-                adapter.writeMessage(
-                    codec.encodeMessage(
-                        RpcCallRequest(
-                            "2.0",
-                            method,
-                            params,
-                            JsonPrimitive(id)
-                        )
-                    )
+    public suspend fun callLowLevel(method: String, params: JsonElement): JsonElement {
+        val id = pending.allocId()
+        val response: RpcResponse
+        adapter.writeMessage(
+            codec.encodeMessage(
+                RpcCallRequest(
+                    "2.0",
+                    method,
+                    params,
+                    JsonPrimitive(id)
                 )
-                withTimeout(5000) {
-                    response = channel.receive()
+            )
+        )
+        withTimeout(5000) {
+            response = suspendCancellableCoroutine { cont ->
+                pending.set(id, cont)
+                cont.invokeOnCancellation {
+                    pending.remove(id)
                 }
-            } catch (e: TimeoutCancellationException) {
-                pending.remove(id)
-                throw e
-            } finally {
-                channel.close()
-            }
-            return@withContext when (response) {
-                is RpcErrorResponse -> throw RpcTargetException(response.error)
-                is RpcResultResponse -> response.result
             }
         }
+        return when (response) {
+            is RpcErrorResponse -> throw RpcTargetException(response.error)
+            is RpcResultResponse -> response.result
+        }
+    }
 
     @JvmName("notifyReified")
     public suspend inline fun <reified TArgs> notify(method: String, params: TArgs) {
@@ -180,7 +179,7 @@ public class RpcChannel(
         } ?: JsonNull)
     }
 
-    public suspend fun notifyLowLevel(method: String, params: JsonElement): Unit = withContext(this.coroutineContext) {
+    public suspend fun notifyLowLevel(method: String, params: JsonElement) {
         adapter.writeMessage(codec.encodeMessage(RpcNotifyRequest("2.0", method, params)))
     }
 
