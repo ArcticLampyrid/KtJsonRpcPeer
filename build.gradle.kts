@@ -5,8 +5,8 @@ buildscript {
     }
 }
 plugins {
-    kotlin("multiplatform") version "1.5.10"
-    kotlin("plugin.serialization") version "1.5.10"
+    kotlin("multiplatform") version "1.5.20"
+    kotlin("plugin.serialization") version "1.5.20"
     signing
     `maven-publish`
 }
@@ -30,7 +30,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
                 implementation("io.ktor:ktor-client-core:1.6.0")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0-native-mt")
             }
         }
         val commonTest by getting {
