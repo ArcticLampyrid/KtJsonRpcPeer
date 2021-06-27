@@ -106,6 +106,15 @@ repositories {
 val emptyJavadocJar by tasks.creating(Jar::class) {
     archiveClassifier.set("javadoc")
 }
+tasks.withType<Jar> {
+    manifest {
+        attributes(
+            "Implementation-Vendor" to "ArcticLampyrid",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version.toString()
+        )
+    }
+}
 configure<PublishingExtension> {
     publications.withType<MavenPublication>().configureEach {
         artifact(emptyJavadocJar)
