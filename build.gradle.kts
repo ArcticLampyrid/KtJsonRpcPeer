@@ -7,13 +7,33 @@ buildscript {
 plugins {
     kotlin("multiplatform") version "1.5.20"
     kotlin("plugin.serialization") version "1.5.20"
+    id("org.ajoberstar.grgit") version "4.1.0"
     signing
     `maven-publish`
 }
 apply(plugin = "kotlinx-atomicfu")
 group = "com.github.ArcticLampyrid.KtJsonRpcPeer"
 if (version.toString() == "unspecified") {
-    version = "0.12.3"
+    runCatching {
+        buildString {
+            runCatching {
+                grgit.describe(mapOf("tags" to true)).let {
+                    if (it.startsWith("v")) {
+                        it.substring(1)
+                    } else {
+                        it
+                    }
+                }
+            }.getOrElse {
+                grgit.head().abbreviatedId
+            }.let(::append)
+            if (!grgit.status().isClean) {
+                append("-dirty")
+            }
+        }
+    }.onSuccess {
+        version = it
+    }
 }
 kotlin {
     explicitApi()
