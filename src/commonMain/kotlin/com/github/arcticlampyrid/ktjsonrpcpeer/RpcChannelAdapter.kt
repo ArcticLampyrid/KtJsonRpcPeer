@@ -2,7 +2,6 @@ package com.github.arcticlampyrid.ktjsonrpcpeer
 
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.withTimeout
 
 public class RpcChannelAdapter(
     private val incoming: ReceiveChannel<ByteArray>,
@@ -13,8 +12,6 @@ public class RpcChannelAdapter(
     }
 
     override suspend fun writeMessage(msg: ByteArray) {
-        withTimeout(5000) {
-            outcoming.send(msg)
-        }
+        outcoming.send(msg)
     }
 }

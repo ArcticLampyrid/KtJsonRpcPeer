@@ -147,15 +147,13 @@ public class RpcChannel(
                 )
             )
         )
-        withTimeout(5000) {
-            response = suspendCancellableCoroutine { cont ->
-                pending.set(id, cont)
-                cont.invokeOnCancellation {
-                    pending.remove(id)
-                }
-                if (!isActive && cont.isActive) {
-                    cont.cancel(CancellationException("RpcChannel is closed"))
-                }
+        response = suspendCancellableCoroutine { cont ->
+            pending.set(id, cont)
+            cont.invokeOnCancellation {
+                pending.remove(id)
+            }
+            if (!isActive && cont.isActive) {
+                cont.cancel(CancellationException("RpcChannel is closed"))
             }
         }
         return when (response) {
