@@ -3,6 +3,8 @@ package com.github.arcticlampyrid.ktjsonrpcpeer
 import kotlinx.serialization.json.JsonElement
 import kotlin.jvm.JvmStatic
 
+private val UNHANDLED_ERROR_CODE = RpcErrorCode(-32000)
+
 @OptIn(RpcInternalModelApi::class)
 public class RpcService internal constructor(
     private val method: Map<String, suspend (params: JsonElement) -> JsonElement>
@@ -27,7 +29,7 @@ public class RpcService internal constructor(
                     } catch (e: RpcTargetException) {
                         RpcErrorResponse(msg.id, e.info)
                     } catch (e: Throwable) {
-                        RpcErrorResponse(msg.id, RpcError(RpcErrorCode(-32000), e.message ?: "Unknown error"))
+                        RpcErrorResponse(msg.id, RpcError(UNHANDLED_ERROR_CODE, e.message ?: "Unknown error"))
                     }
                 } ?: RpcErrorResponse(msg.id, RpcError.MethodNotFound)
             }
