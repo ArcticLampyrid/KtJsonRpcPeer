@@ -66,7 +66,7 @@ public class RpcChannel(
         val root: RpcMessage
         try {
             root = codec.decodeMessage(msg)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             adapter.writeMessage(
                 codec.encodeMessage(
                     RpcErrorResponse(
