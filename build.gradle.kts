@@ -40,7 +40,11 @@ kotlin {
     jvm()
     js(BOTH) {
         nodejs()
-        browser()
+        browser {
+            testTask {
+                enabled = false
+            }
+        }
     }
     macosX64()
     linuxX64()
@@ -69,6 +73,11 @@ kotlin {
                 implementation(kotlin("test-junit"))
                 implementation("org.slf4j:slf4j-simple:1.7.31")
                 implementation("io.ktor:ktor-client-cio:1.6.0")
+            }
+        }
+        val jsTest by getting {
+            dependencies {
+                implementation(kotlin("test-js"))
             }
         }
         val nativeCommonMain by creating {
