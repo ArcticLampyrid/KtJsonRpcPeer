@@ -6,24 +6,24 @@ import kotlin.jvm.JvmStatic
 
 @Serializable
 public data class RpcError(
-    val code: Int,
+    val code: RpcErrorCode,
     val message: String,
     val data: JsonElement? = null
 ) {
     public companion object {
         @JvmStatic
-        public val InvalidRequest: RpcError = RpcError(-32600, "Invalid Request")
+        public val InvalidRequest: RpcError = RpcError(RpcErrorCode.InvalidRequest, "Invalid Request")
 
         @JvmStatic
-        public val MethodNotFound: RpcError = RpcError(-32601, "Method not found")
+        public val MethodNotFound: RpcError = RpcError(RpcErrorCode.MethodNotFound, "Method not found")
 
         @JvmStatic
-        public val InvalidParams: RpcError = RpcError(-32602, "Invalid params")
+        public val InvalidParams: RpcError = RpcError(RpcErrorCode.InvalidParams, "Invalid params")
 
         @JvmStatic
-        public val InternalError: RpcError = RpcError(-32603, "Internal error")
+        public val InternalError: RpcError = RpcError(RpcErrorCode.InternalError, "Internal error")
 
         @JvmStatic
-        public val ParseError: RpcError = RpcError(-32700, "Parse error")
+        public val ParseError: RpcError = RpcError(RpcErrorCode.ParseError, "Parse error")
     }
 }
