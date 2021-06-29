@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 class RpcErrorCodeTest {
     @Test
     fun serializeRpcErrorCode() {
-        assertEquals("12345", Json.encodeToString(RpcErrorCode(12345)))
+        assertEquals("12345", Json.encodeToString(RpcErrorCodeSerializer, RpcErrorCode(12345)))
     }
 
     @Test

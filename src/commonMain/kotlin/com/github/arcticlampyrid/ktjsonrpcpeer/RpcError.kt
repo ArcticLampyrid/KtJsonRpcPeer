@@ -6,6 +6,7 @@ import kotlin.jvm.JvmStatic
 
 @Serializable
 public data class RpcError(
+    @Serializable(with = RpcErrorCodeSerializer::class)
     val code: RpcErrorCode,
     val message: String,
     val data: JsonElement? = null
