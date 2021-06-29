@@ -1,0 +1,5 @@
+style:
+  NewLineAtEndOfFile:
+    active: false
+  WildcardImport:
+    active: false
