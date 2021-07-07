@@ -1,7 +1,7 @@
 @file:Suppress("UNUSED_VARIABLE")
 buildscript {
     dependencies {
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.16.1")
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.16.2")
     }
 }
 plugins {
