@@ -65,13 +65,11 @@ jobs:
     # Sets up the detekt cli
     - name: Setup Detekt
       run: |
-        dest=$( mktemp -d )
         curl --request GET \
           --url ${{ steps.detekt_info.outputs.download_url }} \
           --silent \
           --location \
-          --output $dest/detekt-cli-all.jar
-        echo $dest >> $GITHUB_PATH
+          --output detekt-cli-all.jar
 
     # Performs static analysis using Detekt
     - name: Run Detekt
