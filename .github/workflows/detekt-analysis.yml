@@ -24,11 +24,6 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-env:
-  # Release tag associated with version of Detekt to be installed
-  # SARIF support (required for this workflow) was introduced in Detekt v1.15.0
-  DETEKT_RELEASE_TAG: v1.15.0
-
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "scan"
@@ -48,20 +43,23 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        DETEKT_DOWNLOAD_URL=$( gh api graphql --field tagName=$DETEKT_RELEASE_TAG --raw-field query='
-          query getReleaseAssetDownloadUrl($tagName: String!) {
+        DETEKT_DOWNLOAD_URL=$( gh api graphql --raw-field query='
+          query {
             repository(name: "detekt", owner: "detekt") {
-              release(tagName: $tagName) {
-                releaseAssets(name: "detekt", first: 1) {
-                  nodes {
-                    downloadUrl
+              releases(last: 1) {
+                nodes {
+                  releaseAssets(first: 10) {
+                    nodes {
+                      name
+                      downloadUrl
+                    }
                   }
                 }
               }
             }
           }
         ' | \
-        jq --raw-output '.data.repository.release.releaseAssets.nodes[0].downloadUrl' )
+        jq --raw-output '.data.repository.releases.nodes[0].releaseAssets.nodes[] | select(.name | test("^detekt-cli-.*-all\\.jar$")) | .downloadUrl' )
         echo "::set-output name=download_url::$DETEKT_DOWNLOAD_URL"
 
     # Sets up the detekt cli
@@ -72,15 +70,14 @@ jobs:
           --url ${{ steps.detekt_info.outputs.download_url }} \
           --silent \
           --location \
-          --output $dest/detekt
-        chmod a+x $dest/detekt
+          --output $dest/detekt-cli-all.jar
         echo $dest >> $GITHUB_PATH
 
     # Performs static analysis using Detekt
     - name: Run Detekt
       continue-on-error: true
       run: |
-        detekt --input ${{ github.workspace }} \
+        java -jar detekt-cli-all.jar --input ${{ github.workspace }} \
           --report sarif:${{ github.workspace }}/detekt.sarif.json \
           --build-upon-default-config \
           --config ${{ github.workspace }}/detekt.yml
