@@ -71,7 +71,9 @@ public class RpcChannel(
                 codec.encodeMessage(
                     RpcErrorResponse(
                         JsonNull,
-                        RpcError.ParseError
+                        RpcError(RpcErrorCode.ParseError, e.message?.let {
+                            "Parse error: $it"
+                        } ?: "Parse error")
                     )
                 )
             )
