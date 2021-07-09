@@ -7,9 +7,7 @@
 # 3. On a weekly schedule
 # 4. Manually, on demand, via the "workflow_dispatch" event
 #
-# The workflow should work with no modifications, but you might like to use a
-# later version of the Detekt CLI by modifing the $DETEKT_RELEASE_TAG
-# environment variable.
+# The workflow should work with no modifications.
 name: Scan with Detekt
 
 on:
@@ -37,7 +35,7 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    # Gets the download URL associated with the $DETEKT_RELEASE_TAG
+    # Gets the download URL
     - name: Get Detekt download URL
       id: detekt_info
       env:
@@ -75,23 +73,12 @@ jobs:
     - name: Run Detekt
       continue-on-error: true
       run: |
-        java -jar detekt-cli-all.jar --input ${{ github.workspace }} \
+        java -jar detekt-cli-all.jar \
+          --base-path ${{ github.workspace }} \
+          --input ${{ github.workspace }} \
           --report sarif:${{ github.workspace }}/detekt.sarif.json \
           --build-upon-default-config \
           --config ${{ github.workspace }}/detekt.yml
-
-    # Modifies the SARIF output produced by Detekt so that absolute URIs are relative
-    # This is so we can easily map results onto their source files
-    # This can be removed once relative URI support lands in Detekt: https://git.io/JLBbA
-    - name: Make artifact location URIs relative
-      continue-on-error: true
-      run: |
-        echo "$(
-          jq \
-            --arg github_workspace ${{ github.workspace }} \
-            '. | ( .runs[].results[].locations[].physicalLocation.artifactLocation.uri |= if test($github_workspace) then .[($github_workspace | length | . + 1):] else . end )' \
-            ${{ github.workspace }}/detekt.sarif.json
-        )" > ${{ github.workspace }}/detekt.sarif.json
 
     # Uploads results to GitHub repository using the upload-sarif action
     - uses: github/codeql-action/upload-sarif@v1
