@@ -5,7 +5,7 @@ buildscript {
     }
 }
 plugins {
-    kotlin("multiplatform") version "1.5.20"
+    kotlin("multiplatform") version "1.5.21"
     kotlin("plugin.serialization") version "1.5.20"
     id("org.ajoberstar.grgit") version "4.1.0"
     signing
