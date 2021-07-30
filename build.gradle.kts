@@ -53,7 +53,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
-                implementation("io.ktor:ktor-client-core:1.6.1")
+                implementation("io.ktor:ktor-client-core:1.6.2")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1-native-mt")
             }
         }
