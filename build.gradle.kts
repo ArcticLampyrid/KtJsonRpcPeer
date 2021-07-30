@@ -72,7 +72,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test-junit"))
                 implementation("org.slf4j:slf4j-simple:1.7.32")
-                implementation("io.ktor:ktor-client-cio:1.6.1")
+                implementation("io.ktor:ktor-client-cio:1.6.2")
             }
         }
         val jsTest by getting {
