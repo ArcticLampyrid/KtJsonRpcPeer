@@ -32,7 +32,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
                 implementation("io.ktor:ktor-client-core:1.6.3")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1-native-mt")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
             }
         }
         val commonTest by getting {
