@@ -5,7 +5,7 @@ buildscript {
     }
 }
 plugins {
-    kotlin("multiplatform") version "1.5.30"
+    kotlin("multiplatform") version "1.5.31"
     kotlin("plugin.serialization") version "1.5.30"
     id("com.github.arcticlampyrid.gradle-git-version") version "1.0.2"
     signing
