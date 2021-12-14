@@ -6,7 +6,7 @@ buildscript {
 }
 plugins {
     kotlin("multiplatform") version "1.5.30"
-    kotlin("plugin.serialization") version "1.5.30"
+    kotlin("plugin.serialization") version "1.6.10"
     id("com.github.arcticlampyrid.gradle-git-version") version "1.0.2"
     signing
     `maven-publish`
