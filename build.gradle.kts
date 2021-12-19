@@ -1,13 +1,13 @@
 @file:Suppress("UNUSED_VARIABLE")
 buildscript {
     dependencies {
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.16.3")
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.17.0")
     }
 }
 plugins {
-    kotlin("multiplatform") version "1.5.30"
-    kotlin("plugin.serialization") version "1.5.30"
-    id("com.github.arcticlampyrid.gradle-git-version") version "1.0.2"
+    kotlin("multiplatform") version "1.6.10"
+    kotlin("plugin.serialization") version "1.6.10"
+    id("com.github.arcticlampyrid.gradle-git-version") version "1.0.3"
     signing
     `maven-publish`
 }
@@ -30,8 +30,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
-                implementation("io.ktor:ktor-client-core:1.6.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
+                implementation("io.ktor:ktor-client-core:1.6.7")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
             }
         }
@@ -43,14 +43,14 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                compileOnly("com.squareup.okhttp3:okhttp:4.9.1")
+                compileOnly("com.squareup.okhttp3:okhttp:4.9.3")
             }
         }
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
                 implementation("org.slf4j:slf4j-simple:1.7.32")
-                implementation("io.ktor:ktor-client-cio:1.6.3")
+                implementation("io.ktor:ktor-client-cio:1.6.7")
             }
         }
         val jsTest by getting {
@@ -83,7 +83,7 @@ kotlin {
             dependsOn(nativeCommonTest)
         }
         all {
-            languageSettings.useExperimentalAnnotation("kotlin.RequiresOptIn")
+            languageSettings.optIn("kotlin.RequiresOptIn")
         }
     }
 }

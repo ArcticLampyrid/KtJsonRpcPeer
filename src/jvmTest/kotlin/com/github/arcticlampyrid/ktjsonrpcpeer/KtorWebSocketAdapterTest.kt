@@ -3,11 +3,14 @@ package com.github.arcticlampyrid.ktjsonrpcpeer
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
 import kotlinx.coroutines.runBlocking
-import org.junit.Test
+import kotlin.test.Ignore
+import kotlin.test.Test
 import kotlin.test.assertContentEquals
 
 class KtorWebSocketAdapterTest {
     @Test
+    @Ignore
+    // This is disabled since WebSocket.Org Echo Server is no longer available
     fun echoTest() {
         runBlocking {
             HttpClient {

@@ -45,7 +45,7 @@ internal object RpcSingleMessageSerializer : KSerializer<RpcSingleMessage> {
         return deserializeTree(input.json, tree)
     }
 
-    @InternalSerializationApi
+    @OptIn(InternalSerializationApi::class)
     override val descriptor: SerialDescriptor =
         buildSerialDescriptor("RpcSingleMessageSerializer", PolymorphicKind.SEALED)
 
@@ -74,7 +74,7 @@ internal object RpcMessageSerializer : KSerializer<RpcMessage> {
         }
     }
 
-    @InternalSerializationApi
+    @OptIn(InternalSerializationApi::class)
     override val descriptor: SerialDescriptor =
         buildSerialDescriptor("RpcMessageSerializer", PolymorphicKind.SEALED)
 
