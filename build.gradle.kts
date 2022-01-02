@@ -154,17 +154,3 @@ signing {
     }
     sign(publishing.publications)
 }
-tasks.register("ciPublishMac") {
-    dependsOn(
-        listOf("KotlinMultiplatform", "Jvm", "Js", "LinuxX64", "MacosX64").map {
-            "publish${it}PublicationToSonatypeRepository"
-        }
-    )
-}
-tasks.register("ciPublishWindows") {
-    dependsOn(
-        listOf("MingwX64").map {
-            "publish${it}PublicationToSonatypeRepository"
-        }
-    )
-}

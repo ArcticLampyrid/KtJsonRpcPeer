@@ -6,24 +6,14 @@ on:
 jobs:
   publish:
     environment: PublishToSonatype
-    strategy:
-      matrix:
-        include:
-          - os: macOS-latest
-            tasks: ciPublishMac
-          - os: windows-latest
-            tasks: ciPublishWindows
-    runs-on: ${{matrix.os}}
+    runs-on: macOS-11
     steps:
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
       - name: Checkout the repo
         uses: actions/checkout@v2
-      - name: Install msys2
-        if: matrix.os == 'windows-latest'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: git mingw-w64-x86_64-toolchain
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
       - name: Cache gradle
@@ -41,10 +31,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       - name: Publish Artifacts
-        run: ./gradlew ${{ matrix.tasks }} --no-daemon --stacktrace
+        run: ./gradlew publishAllPublicationsToSonatypeRepository --no-daemon --stacktrace
         env:
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.SONATYPE_USERNAME }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.SONATYPE_PASSWORD }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
 env:
-  GRADLE_OPTS: -Dorg.gradle.configureondemand=true -Dkotlin.incremental=false -Dorg.gradle.jvmargs="-Xmx3g -XX:MaxPermSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=512m"
+  GRADLE_OPTS: -Dorg.gradle.configureondemand=true -Dkotlin.incremental=false -Dorg.gradle.jvmargs="-Xmx3g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=512m"
