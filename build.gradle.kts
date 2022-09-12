@@ -1,12 +1,12 @@
 @file:Suppress("UNUSED_VARIABLE")
 buildscript {
     dependencies {
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.17.0")
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.18.3")
     }
 }
 plugins {
-    kotlin("multiplatform") version "1.6.10"
-    kotlin("plugin.serialization") version "1.6.10"
+    kotlin("multiplatform") version "1.7.10"
+    kotlin("plugin.serialization") version "1.7.10"
     id("com.github.arcticlampyrid.gradle-git-version") version "1.0.4"
     signing
     `maven-publish`
@@ -30,16 +30,17 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
-                implementation("io.ktor:ktor-client-core:1.6.7")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+                implementation("io.ktor:ktor-client-core:2.1.1")
+                implementation("io.ktor:ktor-client-websockets:2.1.1")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0-native-mt")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
             }
         }
         val jvmMain by getting {
@@ -50,8 +51,8 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
-                implementation("org.slf4j:slf4j-simple:1.7.33")
-                implementation("io.ktor:ktor-client-cio:1.6.7")
+                implementation("org.slf4j:slf4j-simple:1.7.36")
+                implementation("io.ktor:ktor-client-cio:2.1.1")
             }
         }
         val jsTest by getting {

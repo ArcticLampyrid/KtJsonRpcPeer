@@ -1,6 +1,6 @@
 package com.github.arcticlampyrid.ktjsonrpcpeer
 
-import io.ktor.http.cio.websocket.*
+import io.ktor.websocket.*
 
 public class RpcKtorWebSocketAdapter(private val session: WebSocketSession) : RpcMessageAdapter {
     override suspend fun readMessage(): ByteArray =

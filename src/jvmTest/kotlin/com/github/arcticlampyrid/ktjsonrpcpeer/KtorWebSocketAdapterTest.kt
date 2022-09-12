@@ -1,7 +1,7 @@
 package com.github.arcticlampyrid.ktjsonrpcpeer
 
 import io.ktor.client.*
-import io.ktor.client.features.websocket.*
+import io.ktor.client.plugins.websocket.*
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Ignore
 import kotlin.test.Test
