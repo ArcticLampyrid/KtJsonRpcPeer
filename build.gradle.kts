@@ -51,7 +51,7 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
-                implementation("org.slf4j:slf4j-simple:1.7.36")
+                implementation("org.slf4j:slf4j-simple:2.0.0")
                 implementation("io.ktor:ktor-client-cio:2.1.1")
             }
         }
