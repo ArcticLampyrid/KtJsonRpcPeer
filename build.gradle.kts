@@ -45,7 +45,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                compileOnly("com.squareup.okhttp3:okhttp:4.9.3")
+                compileOnly("com.squareup.okhttp3:okhttp:4.10.0")
             }
         }
         val jvmTest by getting {
