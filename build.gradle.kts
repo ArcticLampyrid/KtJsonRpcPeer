@@ -32,7 +32,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
                 implementation("io.ktor:ktor-client-core:2.1.1")
-                implementation("io.ktor:ktor-client-websockets:2.1.1")
+                implementation("io.ktor:ktor-client-websockets:2.1.2")
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
             }
         }
